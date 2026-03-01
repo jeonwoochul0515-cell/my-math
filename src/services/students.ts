@@ -75,6 +75,19 @@ export async function createStudent(
   return toStudent(data);
 }
 
+/** 학생 반 변경 */
+export async function updateStudentClass(
+  studentId: string,
+  classId: string | null
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({ class_id: classId })
+    .eq('id', studentId);
+  if (error)
+    throw new Error('반 변경에 실패했습니다: ' + error.message);
+}
+
 /** 학생 삭제 */
 export async function deleteStudent(id: string): Promise<void> {
   const { error } = await supabase.from('students').delete().eq('id', id);

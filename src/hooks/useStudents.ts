@@ -3,6 +3,7 @@ import {
   getStudents,
   createStudent,
   deleteStudent,
+  updateStudentClass,
 } from '../services/students';
 import type { Student } from '../types';
 
@@ -55,5 +56,18 @@ export function useStudents(academyId: string | null) {
     setStudents((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
-  return { students, loading, error, refresh, add, remove };
+  /** 학생 반 변경 */
+  const changeClass = useCallback(
+    async (studentId: string, classId: string | null) => {
+      await updateStudentClass(studentId, classId);
+      setStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId ? { ...s, classId: classId ?? '' } : s
+        )
+      );
+    },
+    []
+  );
+
+  return { students, loading, error, refresh, add, remove, changeClass };
 }

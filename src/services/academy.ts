@@ -8,7 +8,7 @@ export async function getAcademy(ownerId: string): Promise<Academy | null> {
     .select('*')
     .eq('owner_id', ownerId)
     .maybeSingle();
-  if (error) return null;
+  if (error || !data) return null;
   return {
     id: data.id as string,
     name: data.name as string,

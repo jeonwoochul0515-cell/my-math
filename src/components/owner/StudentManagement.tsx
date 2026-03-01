@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Plus, Trash2, Loader2, X, Users, Phone } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, Loader2, X, Users, Phone, BookOpen } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useStudents } from '../../hooks/useStudents';
+import { getClasses } from '../../services/classes';
 import Loading from '../common/Loading';
-import type { Student } from '../../types';
+import type { Student, Class } from '../../types';
 
 /** 학년 선택 옵션 */
 const GRADE_OPTIONS = ['중1', '중2', '중3', '고1', '고2', '고3'] as const;
@@ -28,7 +29,17 @@ export default function StudentManagement() {
     error,
     add,
     remove,
+    changeClass,
   } = useStudents(academy?.id ?? null);
+
+  /** 반 목록 */
+  const [classes, setClasses] = useState<Class[]>([]);
+
+  /** 반 목록 로드 */
+  useEffect(() => {
+    if (!academy?.id) return;
+    getClasses(academy.id).then(setClasses).catch(() => {});
+  }, [academy?.id]);
 
   /** 폼 표시 여부 */
   const [showForm, setShowForm] = useState(false);
@@ -36,12 +47,15 @@ export default function StudentManagement() {
   const [formLoading, setFormLoading] = useState(false);
   /** 삭제 중인 학생 ID */
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  /** 반 변경 중인 학생 ID */
+  const [classChangeLoading, setClassChangeLoading] = useState<string | null>(null);
 
   /** 폼 입력 상태 */
   const [formName, setFormName] = useState('');
   const [formGrade, setFormGrade] = useState('중1');
   const [formPhone, setFormPhone] = useState('');
   const [formParentPhone, setFormParentPhone] = useState('');
+  const [formClassId, setFormClassId] = useState('');
 
   /** 폼 초기화 */
   const resetForm = () => {
@@ -49,6 +63,7 @@ export default function StudentManagement() {
     setFormGrade('중1');
     setFormPhone('');
     setFormParentPhone('');
+    setFormClassId('');
   };
 
   /** 학생 추가 처리 (PIN은 자동 생성) */
@@ -62,7 +77,7 @@ export default function StudentManagement() {
         phone: formPhone.trim(),
         parentPhone: formParentPhone.trim(),
         pin: generatePin(),
-        classId: '',
+        classId: formClassId,
         academyId: academy.id,
       };
       await add(newStudent);
@@ -89,6 +104,20 @@ export default function StudentManagement() {
       );
     } finally {
       setDeleteLoading(null);
+    }
+  };
+
+  /** 학생 반 변경 처리 */
+  const handleClassChange = async (studentId: string, newClassId: string) => {
+    setClassChangeLoading(studentId);
+    try {
+      await changeClass(studentId, newClassId || null);
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : '반 변경에 실패했습니다.'
+      );
+    } finally {
+      setClassChangeLoading(null);
     }
   };
 
@@ -178,6 +207,25 @@ export default function StudentManagement() {
               </select>
             </div>
 
+            {/* 반 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                반
+              </label>
+              <select
+                value={formClassId}
+                onChange={(e) => setFormClassId(e.target.value)}
+                className={INPUT_CLASS}
+              >
+                <option value="">미지정</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* 연락처 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -243,6 +291,7 @@ export default function StudentManagement() {
                 <tr className="border-b border-gray-200 bg-gray-50 text-left">
                   <th className="px-4 py-3 font-medium text-gray-600">이름</th>
                   <th className="px-4 py-3 font-medium text-gray-600">학년</th>
+                  <th className="px-4 py-3 font-medium text-gray-600">반</th>
                   <th className="px-4 py-3 font-medium text-gray-600">연락처</th>
                   <th className="px-4 py-3 font-medium text-gray-600">학부모 연락처</th>
                   <th className="px-4 py-3 font-medium text-gray-600">관리</th>
@@ -261,6 +310,26 @@ export default function StudentManagement() {
                       <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
                         {student.grade}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {classChangeLoading === student.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      ) : (
+                        <select
+                          value={student.classId}
+                          onChange={(e) =>
+                            handleClassChange(student.id, e.target.value)
+                          }
+                          className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+                        >
+                          <option value="">미지정</option>
+                          {classes.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {student.phone || '-'}
@@ -317,7 +386,29 @@ export default function StudentManagement() {
                     )}
                   </button>
                 </div>
-                <div className="mt-3 space-y-1.5 text-sm text-gray-600">
+                <div className="mt-3 space-y-2 text-sm text-gray-600">
+                  {/* 반 선택 */}
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-3.5 w-3.5 text-gray-400" />
+                    {classChangeLoading === student.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                    ) : (
+                      <select
+                        value={student.classId}
+                        onChange={(e) =>
+                          handleClassChange(student.id, e.target.value)
+                        }
+                        className="rounded border border-gray-200 px-2 py-0.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+                      >
+                        <option value="">미지정</option>
+                        {classes.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                   {student.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-3.5 w-3.5 text-gray-400" />
