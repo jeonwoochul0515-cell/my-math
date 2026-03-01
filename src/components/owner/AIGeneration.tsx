@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useAcademy } from '../../hooks/useAcademy';
+import { useProblems } from '../../hooks/useProblems';
+import Loading from '../common/Loading';
+import type { Problem } from '../../types';
 
 /** 학년-단원 매핑 */
 const CURRICULUM: Record<string, string[]> = {
@@ -24,16 +29,41 @@ const GRADES = Object.keys(CURRICULUM);
 
 /** AI 문제 생성 페이지 - 조건 설정 및 문제 미리보기 */
 export default function AIGeneration() {
+  const { user } = useAuth();
+  const { academy, loading: academyLoading } = useAcademy(user?.uid ?? null);
+  const { generating, error, generate } = useProblems(academy?.id ?? null);
+
   const [grade, setGrade] = useState(GRADES[0]);
   const [topic, setTopic] = useState(CURRICULUM[GRADES[0]][0]);
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [count, setCount] = useState(5);
+  const [generatedProblems, setGeneratedProblems] = useState<Problem[]>([]);
 
   /** 학년 변경 시 단원을 첫 번째로 초기화 */
   const handleGradeChange = (newGrade: string) => {
     setGrade(newGrade);
     setTopic(CURRICULUM[newGrade][0]);
   };
+
+  /** 문제 생성 실행 */
+  const handleGenerate = async () => {
+    const results = await generate(grade, topic, difficulty, count);
+    if (results.length > 0) {
+      setGeneratedProblems(results);
+    }
+  };
+
+  if (academyLoading) {
+    return <Loading role="owner" message="로딩 중..." />;
+  }
+
+  if (!academy) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-lg font-medium text-gray-700">학원을 먼저 등록해주세요</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -44,28 +74,18 @@ export default function AIGeneration() {
         {/* 학년 선택 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
-          <select
-            value={grade}
-            onChange={(e) => handleGradeChange(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            {GRADES.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
+          <select value={grade} onChange={(e) => handleGradeChange(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
           </select>
         </div>
 
         {/* 단원 선택 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">단원</label>
-          <select
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            {CURRICULUM[grade].map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
+          <select value={topic} onChange={(e) => setTopic(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+            {CURRICULUM[grade].map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
 
@@ -75,14 +95,8 @@ export default function AIGeneration() {
           <div className="flex gap-4">
             {DIFFICULTIES.map((d) => (
               <label key={d.value} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="difficulty"
-                  value={d.value}
-                  checked={difficulty === d.value}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                />
+                <input type="radio" name="difficulty" value={d.value} checked={difficulty === d.value}
+                  onChange={(e) => setDifficulty(e.target.value)} className="h-4 w-4 text-blue-600 focus:ring-blue-500" />
                 <span className="text-sm text-gray-700">{d.label}</span>
               </label>
             ))}
@@ -92,66 +106,75 @@ export default function AIGeneration() {
         {/* 문제 수 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">문제 수</label>
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <input type="number" min={1} max={10} value={count} onChange={(e) => setCount(Number(e.target.value))}
+            className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
+        {/* 에러 메시지 */}
+        {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+
         {/* 생성 버튼 */}
-        <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-          <Sparkles className="h-4 w-4" />
-          문제 생성
+        <button onClick={handleGenerate} disabled={generating}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {generating ? '생성 중...' : '문제 생성'}
         </button>
       </div>
 
-      {/* 생성된 문제 미리보기 (목업) */}
-      <div className="rounded-xl bg-white p-5 shadow-sm">
-        <h3 className="mb-4 text-base font-semibold text-gray-900">
-          생성된 문제 미리보기
-        </h3>
-        <SampleProblem />
-      </div>
+      {/* 생성된 문제 목록 */}
+      {generatedProblems.length > 0 && (
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-gray-900">
+            생성된 문제 ({generatedProblems.length}개)
+          </h3>
+          <div className="space-y-6">
+            {generatedProblems.map((problem, index) => (
+              <ProblemCard key={problem.id} problem={problem} index={index + 1} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 빈 상태 */}
+      {generatedProblems.length === 0 && !generating && (
+        <div className="rounded-xl bg-white p-5 shadow-sm">
+          <p className="py-6 text-center text-sm text-gray-400">
+            위에서 조건을 설정한 후 문제를 생성해보세요.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-/** 샘플 문제 미리보기 컴포넌트 */
-function SampleProblem() {
-  const choices = ['12', '15', '18', '21'];
-  const answer = 'C';
+/** 생성된 문제 카드 컴포넌트 */
+function ProblemCard({ problem, index }: { problem: Problem; index: number }) {
+  const answerIndex = problem.choices.indexOf(problem.answer);
+  const answerLabel = answerIndex >= 0 ? String.fromCharCode(65 + answerIndex) : '-';
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm leading-relaxed text-gray-800">
-        어떤 수의 3배에서 6을 뺀 값이 그 수의 2배보다 12 클 때, 어떤 수를 구하시오.
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {choices.map((c, i) => {
-          const label = String.fromCharCode(65 + i);
-          return (
-            <div
-              key={label}
-              className={`rounded-lg border px-3 py-2 text-sm ${
-                label === answer
-                  ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                  : 'border-gray-200 text-gray-700'
-              }`}
-            >
-              {label}. {c}
-            </div>
-          );
-        })}
-      </div>
+    <div className="space-y-3 border-b border-gray-100 pb-5 last:border-0 last:pb-0">
+      <p className="text-sm font-medium text-blue-600">문제 {String(index)}</p>
+      <p className="text-sm leading-relaxed text-gray-800">{problem.content}</p>
+      {problem.choices.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {problem.choices.map((c, i) => {
+            const label = String.fromCharCode(65 + i);
+            const isAnswer = c === problem.answer;
+            return (
+              <div key={label}
+                className={`rounded-lg border px-3 py-2 text-sm ${isAnswer ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 text-gray-700'}`}>
+                {label}. {c}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div className="rounded-lg bg-gray-50 p-3">
-        <p className="text-xs font-medium text-gray-500 mb-1">정답: {answer}</p>
-        <p className="text-xs text-gray-600 leading-relaxed">
-          풀이: 어떤 수를 x라 하면, 3x - 6 = 2x + 12. x = 18. 따라서 정답은 18입니다.
-        </p>
+        <p className="text-xs font-medium text-gray-500 mb-1">정답: {answerLabel} ({problem.answer})</p>
+        {problem.solution && (
+          <p className="text-xs text-gray-600 leading-relaxed">풀이: {problem.solution}</p>
+        )}
       </div>
     </div>
   );

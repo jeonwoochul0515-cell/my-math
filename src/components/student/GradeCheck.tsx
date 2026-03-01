@@ -1,56 +1,126 @@
-import { AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Loader2, BookOpen } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
+import { useStudentContext } from '../../context/StudentContext';
+import { getSolveLogs, getProblems } from '../../services/problems';
+import { analyzeWeakness } from '../../services/analytics';
+import type { SolveLog, WeaknessReport, Problem } from '../../types';
 
-/** 단원별 정답률 목 데이터 */
-const TOPIC_ACCURACY = [
-  { topic: '이차방정식', accuracy: 85, total: 20, correct: 17 },
-  { topic: '일차함수', accuracy: 72, total: 18, correct: 13 },
-  { topic: '인수분해', accuracy: 90, total: 10, correct: 9 },
-  { topic: '제곱근', accuracy: 65, total: 15, correct: 10 },
-];
+/** 주간 정답률 추이 계산 (최근 7일) */
+function calcWeeklyTrend(logs: SolveLog[]): { day: string; accuracy: number }[] {
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const result: { day: string; accuracy: number }[] = [];
+  const today = new Date();
 
-/** 주간 정답률 추이 목 데이터 */
-const WEEKLY_TREND = [
-  { day: '월', accuracy: 78 },
-  { day: '화', accuracy: 82 },
-  { day: '수', accuracy: 75 },
-  { day: '목', accuracy: 88 },
-  { day: '금', accuracy: 80 },
-  { day: '토', accuracy: 92 },
-  { day: '일', accuracy: 85 },
-];
-
-/** 약점 단원 찾기 - 정답률이 가장 낮은 단원 반환 */
-function findWeakestTopic(): { topic: string; accuracy: number } {
-  let weakest = TOPIC_ACCURACY[0];
-  for (const item of TOPIC_ACCURACY) {
-    if (item.accuracy < weakest.accuracy) {
-      weakest = item;
-    }
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayLogs = logs.filter(
+      (l) => l.solvedAt.toISOString().split('T')[0] === dateStr
+    );
+    const correct = dayLogs.filter((l) => l.isCorrect).length;
+    const accuracy = dayLogs.length > 0 ? Math.round((correct / dayLogs.length) * 100) : 0;
+    result.push({ day: days[d.getDay()], accuracy });
   }
-  return { topic: weakest.topic, accuracy: weakest.accuracy };
-}
-
-/** 전체 정답률 계산 */
-function getOverallAccuracy(): number {
-  const totalCorrect = TOPIC_ACCURACY.reduce((sum, t) => sum + t.correct, 0);
-  const totalProblems = TOPIC_ACCURACY.reduce((sum, t) => sum + t.total, 0);
-  if (totalProblems === 0) return 0;
-  return Math.round((totalCorrect / totalProblems) * 100);
+  return result;
 }
 
 /** 성적 확인 페이지 - 전체 정답률, 단원별 성적, 주간 추이 차트 */
 export default function GradeCheck() {
-  const overallAccuracy = getOverallAccuracy();
-  const weakest = findWeakestTopic();
+  const { student } = useStudentContext();
+  const [reports, setReports] = useState<WeaknessReport[]>([]);
+  const [weeklyTrend, setWeeklyTrend] = useState<{ day: string; accuracy: number }[]>([]);
+  const [totalProblems, setTotalProblems] = useState(0);
+  const [overallAccuracy, setOverallAccuracy] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  /** 데이터 로드 */
+  const loadData = useCallback(async () => {
+    if (!student) return;
+    setLoading(true);
+    setError(null);
+    try {
+      /** 풀이 기록과 문제 목록을 병렬 로드 */
+      const [logs, problems] = await Promise.all([
+        getSolveLogs(student.id),
+        getProblems(student.academyId),
+      ]);
+
+      /** 문제 ID -> 단원 매핑 */
+      const topicMap = new Map<string, string>();
+      problems.forEach((p: Problem) => topicMap.set(p.id, p.topic));
+
+      /** 약점 분석 */
+      const weakness = analyzeWeakness(logs, topicMap);
+      setReports(weakness);
+
+      /** 전체 정답률 계산 */
+      const total = logs.length;
+      const correct = logs.filter((l: SolveLog) => l.isCorrect).length;
+      setTotalProblems(total);
+      setOverallAccuracy(total > 0 ? Math.round((correct / total) * 100) : 0);
+
+      /** 주간 추이 */
+      setWeeklyTrend(calcWeeklyTrend(logs));
+    } catch {
+      setError('성적 데이터를 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [student]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  /** 로그인 전 */
+  if (!student) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+        <BookOpen className="mb-3 h-12 w-12 text-gray-300" />
+        <p>먼저 홈에서 로그인해주세요.</p>
+      </div>
+    );
+  }
+
+  /** 로딩 중 */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  /** 에러 */
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-red-500">
+        <p>{error}</p>
+        <button onClick={loadData} className="mt-3 text-sm text-indigo-600 underline">
+          다시 시도
+        </button>
+      </div>
+    );
+  }
+
+  /** 데이터 없음 */
+  if (totalProblems === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+        <BookOpen className="mb-3 h-12 w-12 text-gray-300" />
+        <p className="text-lg font-semibold">아직 풀이 기록이 없습니다</p>
+        <p className="mt-1 text-sm">문제를 풀면 성적이 여기에 표시됩니다.</p>
+      </div>
+    );
+  }
+
+  /** 가장 약한 단원 */
+  const weakest = reports.length > 0 ? reports[0] : null;
 
   return (
     <div className="space-y-6">
@@ -58,7 +128,7 @@ export default function GradeCheck() {
       <div className="flex flex-col items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-700 p-8 text-white shadow-lg">
         <p className="text-sm font-medium text-indigo-100">전체 정답률</p>
         <p className="mt-2 text-5xl font-extrabold">{overallAccuracy}%</p>
-        <p className="mt-2 text-sm text-indigo-200">총 {TOPIC_ACCURACY.reduce((s, t) => s + t.total, 0)}문제 풀이</p>
+        <p className="mt-2 text-sm text-indigo-200">총 {totalProblems}문제 풀이</p>
       </div>
 
       {/* 단원별 정답률 테이블 */}
@@ -67,7 +137,7 @@ export default function GradeCheck() {
           <h3 className="text-lg font-bold text-gray-900">단원별 정답률</h3>
         </div>
         <div className="divide-y divide-gray-100">
-          {TOPIC_ACCURACY.map((item) => (
+          {reports.map((item) => (
             <div key={item.topic} className="flex items-center justify-between px-5 py-3">
               <span className="text-sm font-medium text-gray-700">{item.topic}</span>
               <div className="flex items-center gap-3">
@@ -82,7 +152,9 @@ export default function GradeCheck() {
                 <span className={`text-sm font-bold ${item.accuracy >= 80 ? 'text-green-600' : item.accuracy >= 70 ? 'text-amber-600' : 'text-red-600'}`}>
                   {item.accuracy}%
                 </span>
-                <span className="text-xs text-gray-400">{item.correct}/{item.total}</span>
+                <span className="text-xs text-gray-400">
+                  {item.correctCount}/{item.totalProblems}
+                </span>
               </div>
             </div>
           ))}
@@ -94,12 +166,12 @@ export default function GradeCheck() {
         <h3 className="mb-4 text-lg font-bold text-gray-900">주간 정답률 추이</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={WEEKLY_TREND}>
+            <BarChart data={weeklyTrend}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 13 }} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 13 }} unit="%" />
               <Tooltip
-                formatter={(value) => [`${value}%`, '정답률']}
+                formatter={(value) => [`${String(value)}%`, '정답률']}
                 contentStyle={{ borderRadius: '8px', fontSize: '13px' }}
               />
               <Bar dataKey="accuracy" fill="#4f46e5" radius={[4, 4, 0, 0]} />
@@ -109,13 +181,17 @@ export default function GradeCheck() {
       </div>
 
       {/* 약점 알림 */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-        <div>
-          <p className="text-sm font-bold text-amber-800">약점 단원: {weakest.topic} ({weakest.accuracy}%)</p>
-          <p className="mt-1 text-sm text-amber-700">추가 연습이 필요합니다</p>
+      {weakest && weakest.accuracy < 80 && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <p className="text-sm font-bold text-amber-800">
+              약점 단원: {weakest.topic} ({weakest.accuracy}%)
+            </p>
+            <p className="mt-1 text-sm text-amber-700">{weakest.recommendation}</p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

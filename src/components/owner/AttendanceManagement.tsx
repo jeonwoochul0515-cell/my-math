@@ -1,46 +1,110 @@
-import { useState } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { CalendarDays, Loader2 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useAcademy } from '../../hooks/useAcademy';
+import { useStudents } from '../../hooks/useStudents';
+import { getAttendanceByDate, checkIn, checkOut } from '../../services/attendance';
+import { AttendanceTableRow, AttendanceMobileCard } from './AttendanceRow';
+import Loading from '../common/Loading';
+import type { AttendanceRecord, Student } from '../../types';
 
 /** 출결 상태 타입 */
-type AttendanceStatus = '출석' | '결석' | '조퇴';
-
-/** 출결 행 데이터 타입 */
-interface AttendanceRow {
-  id: string;
-  name: string;
-  grade: string;
-  checkIn: string | null;
-  checkOut: string | null;
-  status: AttendanceStatus;
-}
-
-/** 상태별 배지 스타일 */
-const STATUS_STYLES: Record<AttendanceStatus, string> = {
-  출석: 'bg-green-100 text-green-700',
-  결석: 'bg-red-100 text-red-700',
-  조퇴: 'bg-yellow-100 text-yellow-700',
-};
-
-/** 출결 목업 데이터 */
-const MOCK_ATTENDANCE: AttendanceRow[] = [
-  { id: '1', name: '김민준', grade: '중2', checkIn: '14:02', checkOut: '16:30', status: '출석' },
-  { id: '2', name: '이서연', grade: '중3', checkIn: '14:05', checkOut: '16:25', status: '출석' },
-  { id: '3', name: '박지호', grade: '고1', checkIn: '14:10', checkOut: null, status: '출석' },
-  { id: '4', name: '최수아', grade: '중1', checkIn: '14:15', checkOut: '15:00', status: '조퇴' },
-  { id: '5', name: '정예준', grade: '중2', checkIn: '14:18', checkOut: null, status: '출석' },
-  { id: '6', name: '한소율', grade: '중3', checkIn: null, checkOut: null, status: '결석' },
-  { id: '7', name: '윤도현', grade: '고1', checkIn: '14:30', checkOut: '16:35', status: '출석' },
-  { id: '8', name: '장하은', grade: '중2', checkIn: '14:22', checkOut: null, status: '출석' },
-];
+type AttendanceStatus = '출석' | '결석' | '퇴실';
 
 /** 오늘 날짜를 YYYY-MM-DD 형식으로 반환 */
 function getTodayString(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+/** 출석 상태 계산 */
+function getStatus(record: AttendanceRecord | undefined): AttendanceStatus {
+  if (!record) return '결석';
+  if (record.checkOut) return '퇴실';
+  return '출석';
+}
+
 /** 출결 관리 페이지 - 날짜별 학생 출석/퇴실 상태 관리 */
 export default function AttendanceManagement() {
+  const { user } = useAuth();
+  const { academy, loading: academyLoading } = useAcademy(user?.uid ?? null);
+  const { students, loading: studentsLoading } = useStudents(academy?.id ?? null);
+
   const [selectedDate, setSelectedDate] = useState(getTodayString());
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  /** 선택된 날짜의 출결 데이터 로드 */
+  const loadAttendance = useCallback(async () => {
+    if (!academy?.id) return;
+    setDataLoading(true);
+    try {
+      const records = await getAttendanceByDate(academy.id, selectedDate);
+      setAttendance(records);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '출결 데이터를 불러오지 못했습니다.');
+    } finally {
+      setDataLoading(false);
+    }
+  }, [academy?.id, selectedDate]);
+
+  useEffect(() => { loadAttendance(); }, [loadAttendance]);
+
+  /** 출석 체크인 처리 */
+  const handleCheckIn = async (studentId: string) => {
+    setActionLoading(studentId);
+    try {
+      const record = await checkIn(studentId);
+      setAttendance((prev) => [record, ...prev]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '체크인에 실패했습니다.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  /** 퇴실 체크아웃 처리 */
+  const handleCheckOut = async (attendanceId: string) => {
+    setActionLoading(attendanceId);
+    try {
+      await checkOut(attendanceId);
+      setAttendance((prev) =>
+        prev.map((r) => r.id === attendanceId ? { ...r, checkOut: new Date() } : r)
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '퇴실 처리에 실패했습니다.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (academyLoading || studentsLoading) {
+    return <Loading role="owner" message="출결 데이터를 불러오는 중..." />;
+  }
+
+  if (!academy) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-lg font-medium text-gray-700">학원을 먼저 등록해주세요</p>
+      </div>
+    );
+  }
+
+  /** 출결 맵 (studentId -> AttendanceRecord) */
+  const attendanceMap = new Map<string, AttendanceRecord>(
+    attendance.map((r) => [r.studentId, r])
+  );
+
+  /** 학생별 출결 행 데이터 */
+  const rows = students.map((s: Student) => {
+    const record = attendanceMap.get(s.id);
+    return { student: s, record, status: getStatus(record) };
+  });
+
+  const isToday = selectedDate === getTodayString();
+  const rowProps = { isToday, actionLoading, onCheckIn: handleCheckIn, onCheckOut: handleCheckOut };
 
   return (
     <div className="space-y-6">
@@ -49,64 +113,47 @@ export default function AttendanceManagement() {
       {/* 날짜 선택 */}
       <div className="flex items-center gap-3">
         <CalendarDays className="h-5 w-5 text-blue-600" />
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
+        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
       </div>
 
-      {/* PC: 테이블 레이아웃 */}
-      <div className="hidden rounded-xl bg-white shadow-sm md:block">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-gray-500">
-              <th className="px-4 py-3 font-medium">이름</th>
-              <th className="px-4 py-3 font-medium">학년</th>
-              <th className="px-4 py-3 font-medium">입실</th>
-              <th className="px-4 py-3 font-medium">퇴실</th>
-              <th className="px-4 py-3 font-medium">상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {MOCK_ATTENDANCE.map((row) => (
-              <tr key={row.id} className="border-b border-gray-100 last:border-0">
-                <td className="px-4 py-3 font-medium text-gray-900">{row.name}</td>
-                <td className="px-4 py-3 text-gray-600">{row.grade}</td>
-                <td className="px-4 py-3 text-gray-600">{row.checkIn ?? '-'}</td>
-                <td className="px-4 py-3 text-gray-600">{row.checkOut ?? '-'}</td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[row.status]}`}>
-                    {row.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
 
-      {/* 모바일: 카드 레이아웃 */}
-      <div className="space-y-3 md:hidden">
-        {MOCK_ATTENDANCE.map((row) => (
-          <div key={row.id} className="rounded-xl bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-medium text-gray-900">{row.name}</span>
-                <span className="ml-2 text-xs text-gray-500">{row.grade}</span>
-              </div>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[row.status]}`}>
-                {row.status}
-              </span>
-            </div>
-            <div className="mt-2 flex gap-4 text-sm text-gray-500">
-              <span>입실: {row.checkIn ?? '-'}</span>
-              <span>퇴실: {row.checkOut ?? '-'}</span>
-            </div>
+      {dataLoading ? (
+        <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>
+      ) : rows.length === 0 ? (
+        <p className="py-10 text-center text-sm text-gray-400">등록된 학생이 없습니다.</p>
+      ) : (
+        <>
+          {/* PC: 테이블 */}
+          <div className="hidden rounded-xl bg-white shadow-sm md:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-500">
+                  <th className="px-4 py-3 font-medium">이름</th>
+                  <th className="px-4 py-3 font-medium">학년</th>
+                  <th className="px-4 py-3 font-medium">입실</th>
+                  <th className="px-4 py-3 font-medium">퇴실</th>
+                  <th className="px-4 py-3 font-medium">상태</th>
+                  {isToday && <th className="px-4 py-3 font-medium">액션</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <AttendanceTableRow key={row.student.id} {...row} {...rowProps} />
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+
+          {/* 모바일: 카드 */}
+          <div className="space-y-3 md:hidden">
+            {rows.map((row) => (
+              <AttendanceMobileCard key={row.student.id} {...row} {...rowProps} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -6,10 +6,12 @@ import AttendanceManagement from './components/owner/AttendanceManagement';
 import ClassManagement from './components/owner/ClassManagement';
 import AIGeneration from './components/owner/AIGeneration';
 import OwnerSettings from './components/owner/Settings';
+import StudentLayout from './components/student/StudentLayout';
 import StudentHome from './components/student/StudentHome';
 import ProblemSolving from './components/student/ProblemSolving';
 import GradeCheck from './components/student/GradeCheck';
 import StudentProfile from './components/student/StudentProfile';
+import ParentLayout from './components/parent/ParentLayout';
 import ParentHome from './components/parent/ParentHome';
 import ChildGrades from './components/parent/ChildGrades';
 import AttendanceCheck from './components/parent/AttendanceCheck';
@@ -147,10 +149,12 @@ function AppRoutes() {
           <AppLayout role="student" title="마이매쓰 학생" navItems={studentNavItems} />
         }
       >
-        <Route index element={<StudentHome />} />
-        <Route path="solve" element={<ProblemSolving />} />
-        <Route path="grades" element={<GradeCheck />} />
-        <Route path="profile" element={<StudentProfile />} />
+        <Route element={<StudentLayout />}>
+          <Route index element={<StudentHome />} />
+          <Route path="solve" element={<ProblemSolving />} />
+          <Route path="grades" element={<GradeCheck />} />
+          <Route path="profile" element={<StudentProfile />} />
+        </Route>
       </Route>
 
       {/* 학부모 라우트 */}
@@ -160,10 +164,12 @@ function AppRoutes() {
           <AppLayout role="parent" title="마이매쓰 학부모" navItems={parentNavItems} />
         }
       >
-        <Route index element={<ParentHome />} />
-        <Route path="grades" element={<ChildGrades />} />
-        <Route path="attendance" element={<AttendanceCheck />} />
-        <Route path="notifications" element={<NotificationList />} />
+        <Route element={<ParentLayout />}>
+          <Route index element={<ParentHome />} />
+          <Route path="grades" element={<ChildGrades />} />
+          <Route path="attendance" element={<AttendanceCheck />} />
+          <Route path="notifications" element={<NotificationList />} />
+        </Route>
       </Route>
 
       {/* 404 → 홈으로 리다이렉트 */}
