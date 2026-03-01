@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Loader2, X, Users, Shuffle, Phone } from 'lucide-react';
+import { Plus, Trash2, Loader2, X, Users, Phone } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useStudents } from '../../hooks/useStudents';
@@ -13,7 +13,7 @@ const GRADE_OPTIONS = ['중1', '중2', '중3', '고1', '고2', '고3'] as const;
 const INPUT_CLASS =
   'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500';
 
-/** 랜덤 4자리 PIN 생성 */
+/** 랜덤 4자리 PIN 생성 (학생 로그인용, 자동 부여) */
 function generatePin(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
@@ -42,7 +42,6 @@ export default function StudentManagement() {
   const [formGrade, setFormGrade] = useState('중1');
   const [formPhone, setFormPhone] = useState('');
   const [formParentPhone, setFormParentPhone] = useState('');
-  const [formPin, setFormPin] = useState('');
 
   /** 폼 초기화 */
   const resetForm = () => {
@@ -50,12 +49,11 @@ export default function StudentManagement() {
     setFormGrade('중1');
     setFormPhone('');
     setFormParentPhone('');
-    setFormPin('');
   };
 
-  /** 학생 추가 처리 */
+  /** 학생 추가 처리 (PIN은 자동 생성) */
   const handleAdd = async () => {
-    if (!academy?.id || !formName.trim() || formPin.length !== 4) return;
+    if (!academy?.id || !formName.trim()) return;
     setFormLoading(true);
     try {
       const newStudent: Omit<Student, 'id' | 'createdAt'> = {
@@ -63,7 +61,7 @@ export default function StudentManagement() {
         grade: formGrade,
         phone: formPhone.trim(),
         parentPhone: formParentPhone.trim(),
-        pin: formPin,
+        pin: generatePin(),
         classId: '',
         academyId: academy.id,
       };
@@ -110,11 +108,6 @@ export default function StudentManagement() {
     );
   }
 
-  /** PIN 유효성 검사 (4자리 숫자) */
-  const isPinValid = /^\d{4}$/.test(formPin);
-  /** 폼 제출 가능 여부 */
-  const canSubmit = formName.trim().length > 0 && isPinValid;
-
   return (
     <div className="space-y-6">
       {/* 헤더 */}
@@ -152,7 +145,7 @@ export default function StudentManagement() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* 이름 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -212,44 +205,11 @@ export default function StudentManagement() {
                 className={INPUT_CLASS}
               />
             </div>
-
-            {/* PIN */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                출결 PIN <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={4}
-                  value={formPin}
-                  onChange={(e) =>
-                    setFormPin(e.target.value.replace(/\D/g, '').slice(0, 4))
-                  }
-                  placeholder="4자리 숫자"
-                  className={INPUT_CLASS}
-                />
-                <button
-                  type="button"
-                  onClick={() => setFormPin(generatePin())}
-                  className="flex shrink-0 items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                  title="랜덤 PIN 생성"
-                >
-                  <Shuffle className="h-4 w-4" />
-                </button>
-              </div>
-              {formPin.length > 0 && !isPinValid && (
-                <p className="mt-1 text-xs text-red-500">
-                  4자리 숫자를 입력해주세요
-                </p>
-              )}
-            </div>
           </div>
 
           <button
             onClick={handleAdd}
-            disabled={formLoading || !canSubmit}
+            disabled={formLoading || !formName.trim()}
             className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {formLoading ? (
@@ -283,16 +243,9 @@ export default function StudentManagement() {
                 <tr className="border-b border-gray-200 bg-gray-50 text-left">
                   <th className="px-4 py-3 font-medium text-gray-600">이름</th>
                   <th className="px-4 py-3 font-medium text-gray-600">학년</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">
-                    연락처
-                  </th>
-                  <th className="px-4 py-3 font-medium text-gray-600">
-                    학부모 연락처
-                  </th>
-                  <th className="px-4 py-3 font-medium text-gray-600">PIN</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">
-                    관리
-                  </th>
+                  <th className="px-4 py-3 font-medium text-gray-600">연락처</th>
+                  <th className="px-4 py-3 font-medium text-gray-600">학부모 연락처</th>
+                  <th className="px-4 py-3 font-medium text-gray-600">관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,9 +267,6 @@ export default function StudentManagement() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {student.parentPhone || '-'}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-gray-600">
-                      {student.pin}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -381,10 +331,6 @@ export default function StudentManagement() {
                       <span>{student.parentPhone}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400">PIN</span>
-                    <span className="font-mono">{student.pin}</span>
-                  </div>
                 </div>
               </div>
             ))}
