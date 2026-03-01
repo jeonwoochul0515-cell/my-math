@@ -6,6 +6,8 @@ import AttendanceManagement from './components/owner/AttendanceManagement';
 import ClassManagement from './components/owner/ClassManagement';
 import AIGeneration from './components/owner/AIGeneration';
 import OwnerSettings from './components/owner/Settings';
+import OwnerLayout from './components/owner/OwnerLayout';
+import StudentManagement from './components/owner/StudentManagement';
 import StudentLayout from './components/student/StudentLayout';
 import StudentHome from './components/student/StudentHome';
 import ProblemSolving from './components/student/ProblemSolving';
@@ -101,6 +103,7 @@ const ownerNavItems: NavItem[] = [
   { label: '대시보드', path: '/owner', icon: 'LayoutDashboard' },
   { label: '출결관리', path: '/owner/attendance', icon: 'ClipboardCheck' },
   { label: '반 관리', path: '/owner/classes', icon: 'UsersRound' },
+  { label: '학생관리', path: '/owner/students', icon: 'GraduationCap' },
   { label: 'AI 출제', path: '/owner/ai-generate', icon: 'Sparkles' },
   { label: '설정', path: '/owner/settings', icon: 'Settings' },
 ];
@@ -135,11 +138,14 @@ function AppRoutes() {
           <AppLayout role="owner" title="마이매쓰 원장" navItems={ownerNavItems} />
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="attendance" element={<AttendanceManagement />} />
-        <Route path="classes" element={<ClassManagement />} />
-        <Route path="ai-generate" element={<AIGeneration />} />
-        <Route path="settings" element={<OwnerSettings />} />
+        <Route element={<OwnerLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="attendance" element={<AttendanceManagement />} />
+          <Route path="classes" element={<ClassManagement />} />
+          <Route path="students" element={<StudentManagement />} />
+          <Route path="ai-generate" element={<AIGeneration />} />
+          <Route path="settings" element={<OwnerSettings />} />
+        </Route>
       </Route>
 
       {/* 학생 라우트 */}

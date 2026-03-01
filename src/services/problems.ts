@@ -60,7 +60,7 @@ export async function generateProblems(
 /** 생성된 문제를 DB에 저장 */
 export async function saveProblem(
   problem: Omit<Problem, 'id' | 'source'>,
-  _academyId: string
+  academyId: string
 ): Promise<Problem> {
   const { data, error } = await supabase
     .from('generated_problems')
@@ -72,6 +72,7 @@ export async function saveProblem(
       topic: problem.topic,
       difficulty: problem.difficulty,
       choices: problem.choices,
+      academy_id: academyId,
     })
     .select()
     .single();

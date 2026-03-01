@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
 import type { User } from 'firebase/auth';
@@ -49,6 +50,18 @@ export function useAuth() {
     }
   }, []);
 
+  /** 이메일/비밀번호 회원가입 (원장용) */
+  const signup = useCallback(async (email: string, password: string) => {
+    try {
+      setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '회원가입에 실패했습니다.';
+      setAuthState((prev) => ({ ...prev, loading: false, error: message }));
+    }
+  }, []);
+
   /** 로그아웃 */
   const logout = useCallback(async () => {
     try {
@@ -61,5 +74,5 @@ export function useAuth() {
     }
   }, []);
 
-  return { ...authState, login, logout };
+  return { ...authState, login, signup, logout };
 }

@@ -9,11 +9,11 @@ export function useStudent() {
   const [error, setError] = useState<string | null>(null);
 
   /** PIN으로 학생 로그인 */
-  const loginWithPin = useCallback(async (pin: string, academyId: string) => {
+  const loginWithPin = useCallback(async (pin: string) => {
     setLoading(true);
     setError(null);
     try {
-      const found = await getStudentByPin(pin, academyId);
+      const found = await getStudentByPin(pin);
       if (!found) {
         setError('학생 정보를 찾을 수 없습니다. PIN을 확인해주세요.');
         return false;

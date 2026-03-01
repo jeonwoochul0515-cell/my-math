@@ -39,18 +39,17 @@ export async function getStudent(id: string): Promise<Student | null> {
   return toStudent(data);
 }
 
-/** PIN으로 학생 조회 (학생 로그인용) */
+/** PIN으로 학생 조회 (학생 로그인용, 학원 구분 없이 PIN만으로 검색) */
 export async function getStudentByPin(
-  pin: string,
-  academyId: string
+  pin: string
 ): Promise<Student | null> {
   const { data, error } = await supabase
     .from('students')
     .select('*')
     .eq('pin', pin)
-    .eq('academy_id', academyId)
-    .single();
-  if (error) return null;
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
   return toStudent(data);
 }
 

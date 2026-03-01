@@ -6,7 +6,7 @@ export interface StudentContextValue {
   student: Student | null;
   loading: boolean;
   error: string | null;
-  loginWithPin: (pin: string, academyId: string) => Promise<boolean>;
+  loginWithPin: (pin: string) => Promise<boolean>;
   logout: () => void;
 }
 

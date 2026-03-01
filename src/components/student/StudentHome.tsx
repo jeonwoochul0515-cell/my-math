@@ -5,9 +5,6 @@ import { getSolveLogs } from '../../services/problems';
 import { getStudentAttendance } from '../../services/attendance';
 import type { SolveLog } from '../../types';
 
-/** 임시 학원 ID (추후 동적으로 변경) */
-const DEFAULT_ACADEMY_ID = 'default-academy';
-
 /** 진행률 퍼센트 계산 */
 function getProgressPercent(completed: number, total: number): number {
   if (total === 0) return 0;
@@ -36,7 +33,7 @@ function PinLoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pin.length !== 4) return;
-    await loginWithPin(pin, DEFAULT_ACADEMY_ID);
+    await loginWithPin(pin);
   };
 
   return (
