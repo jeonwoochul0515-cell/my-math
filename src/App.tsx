@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { GraduationCap, User, Users } from 'lucide-react';
 import AppLayout from './components/common/AppLayout';
 import Dashboard from './components/owner/Dashboard';
@@ -202,8 +202,8 @@ function AppRoutes() {
         </Route>
       </Route>
 
-      {/* 404 → 홈으로 리다이렉트 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 404 → 역할 선택 페이지 표시 (리다이렉트 없음) */}
+      <Route path="*" element={<RoleSelectPage />} />
     </Routes>
   );
 }
