@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { Lock, LogIn } from 'lucide-react';
-import { useAdminAuth } from '../../hooks/useAdminAuth';
+
+interface AdminLoginFormProps {
+  error: string | null;
+  onLogin: (password: string) => void;
+}
 
 /** 관리자 로그인 폼 (비밀번호만 입력) */
-export default function AdminLoginForm() {
-  const { error, login } = useAdminAuth();
+export default function AdminLoginForm({ error, onLogin }: AdminLoginFormProps) {
   const [password, setPassword] = useState('');
 
   /** 폼 제출 */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(password);
+    onLogin(password);
   };
 
   return (
