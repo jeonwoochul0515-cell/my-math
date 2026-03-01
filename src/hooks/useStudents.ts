@@ -14,7 +14,10 @@ export function useStudents(academyId: string | null) {
 
   /** 학생 목록 새로고침 */
   const refresh = useCallback(async () => {
-    if (!academyId) return;
+    if (!academyId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await getStudents(academyId);
