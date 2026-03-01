@@ -12,6 +12,7 @@ export default function Loading({ role = 'owner', message = '로딩 중...' }: L
     owner: 'text-blue-600',
     student: 'text-indigo-600',
     parent: 'text-purple-600',
+    admin: 'text-gray-800',
   };
 
   return (

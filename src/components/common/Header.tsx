@@ -15,6 +15,7 @@ export default function Header({ title, role, userName, onMenuToggle, onLogout }
     owner: 'bg-blue-600',
     student: 'bg-indigo-600',
     parent: 'bg-purple-600',
+    admin: 'bg-gray-800',
   };
 
   return (

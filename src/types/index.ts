@@ -1,11 +1,13 @@
 /** 사용자 역할 */
-export type UserRole = 'owner' | 'student' | 'parent';
+export type UserRole = 'owner' | 'student' | 'parent' | 'admin';
 
 /** 학원 정보 */
 export interface Academy {
   id: string;
   name: string;
   ownerId: string;
+  ownerPhone?: string;
+  address?: string;
   createdAt: Date;
 }
 
@@ -82,6 +84,23 @@ export interface WeaknessReport {
   totalProblems: number;
   correctCount: number;
   recommendation: string;
+}
+
+/** 결제 상태 */
+export type PaymentStatus = 'paid' | 'pending' | 'overdue' | 'cancelled';
+
+/** 결제 내역 */
+export interface Payment {
+  id: string;
+  academyId: string;
+  amount: number;
+  status: PaymentStatus;
+  method: string;
+  memo: string;
+  paidAt: Date | null;
+  periodStart: string;
+  periodEnd: string;
+  createdAt: Date;
 }
 
 /** 내비게이션 메뉴 아이템 */

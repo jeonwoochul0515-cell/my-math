@@ -21,12 +21,14 @@ export default function AppLayout({ role, title, navItems, userName, onLogout }:
     owner: 'bg-blue-600',
     student: 'bg-indigo-600',
     parent: 'bg-purple-600',
+    admin: 'bg-gray-800',
   };
 
   const activeBgMap: Record<string, string> = {
     owner: 'bg-blue-700',
     student: 'bg-indigo-700',
     parent: 'bg-purple-700',
+    admin: 'bg-gray-900',
   };
 
   /** 활성 텍스트 색상 맵 */
@@ -34,6 +36,7 @@ export default function AppLayout({ role, title, navItems, userName, onLogout }:
     owner: 'text-blue-600',
     student: 'text-indigo-600',
     parent: 'text-purple-600',
+    admin: 'text-gray-800',
   };
 
   /** 아이콘 이름으로 Lucide 아이콘 컴포넌트 가져오기 */
@@ -72,7 +75,7 @@ export default function AppLayout({ role, title, navItems, userName, onLogout }:
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.path === '/owner' || item.path === '/student' || item.path === '/parent'}
+                end={item.path === '/owner' || item.path === '/student' || item.path === '/parent' || item.path === '/admin'}
                 className={({ isActive }) => navLinkClasses(isActive)}
               >
                 {getIcon(item.icon)}
@@ -104,7 +107,7 @@ export default function AppLayout({ role, title, navItems, userName, onLogout }:
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    end={item.path === '/owner' || item.path === '/student' || item.path === '/parent'}
+                    end={item.path === '/owner' || item.path === '/student' || item.path === '/parent' || item.path === '/admin'}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) => navLinkClasses(isActive)}
                   >
@@ -130,7 +133,7 @@ export default function AppLayout({ role, title, navItems, userName, onLogout }:
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === '/owner' || item.path === '/student' || item.path === '/parent'}
+              end={item.path === '/owner' || item.path === '/student' || item.path === '/parent' || item.path === '/admin'}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-0.5 px-2 py-1 text-xs ${
                   isActive

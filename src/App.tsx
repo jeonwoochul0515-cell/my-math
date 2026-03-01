@@ -18,6 +18,10 @@ import ParentHome from './components/parent/ParentHome';
 import ChildGrades from './components/parent/ChildGrades';
 import AttendanceCheck from './components/parent/AttendanceCheck';
 import NotificationList from './components/parent/NotificationList';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './components/admin/AdminDashboard';
+import AcademyList from './components/admin/AcademyList';
+import AcademyDetail from './components/admin/AcademyDetail';
 import type { UserRole, NavItem } from './types';
 
 /** 역할 선택 카드 */
@@ -124,6 +128,12 @@ const parentNavItems: NavItem[] = [
   { label: '알림', path: '/parent/notifications', icon: 'Bell' },
 ];
 
+/** 관리자 네비게이션 */
+const adminNavItems: NavItem[] = [
+  { label: '대시보드', path: '/admin', icon: 'LayoutDashboard' },
+  { label: '학원 관리', path: '/admin/academies', icon: 'Building2' },
+];
+
 /** 앱 라우터 */
 function AppRoutes() {
   return (
@@ -175,6 +185,20 @@ function AppRoutes() {
           <Route path="grades" element={<ChildGrades />} />
           <Route path="attendance" element={<AttendanceCheck />} />
           <Route path="notifications" element={<NotificationList />} />
+        </Route>
+      </Route>
+
+      {/* 관리자 라우트 */}
+      <Route
+        path="/admin"
+        element={
+          <AppLayout role="admin" title="마이매쓰 관리자" navItems={adminNavItems} />
+        }
+      >
+        <Route element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="academies" element={<AcademyList />} />
+          <Route path="academies/:id" element={<AcademyDetail />} />
         </Route>
       </Route>
 
