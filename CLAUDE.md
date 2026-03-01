@@ -22,10 +22,10 @@
 - **아이콘**: lucide-react
 - **인증**: Firebase Authentication
 - **데이터베이스**: Supabase (PostgreSQL + pgvector)
-- **호스팅**: Firebase Hosting
-- **AI 문제 생성**: Claude API (Supabase Edge Function에서 호출)
+- **호스팅**: Cloudflare Pages
+- **AI 문제 생성**: Claude API (Cloudflare Pages Functions에서 호출)
 - **벡터 검색**: Supabase pgvector (문제 유사도 검색)
-- **임베딩**: OpenAI Embedding API (text-embedding-3-small)
+- **임베딩**: Google Gemini Embedding API (text-embedding-004, 768차원)
 
 ## 폴더 구조
 
@@ -93,8 +93,8 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-OPENAI_API_KEY=              # 임베딩용 (서버사이드만)
-ANTHROPIC_API_KEY=           # Claude API (Edge Function에서만)
+GEMINI_API_KEY=              # 임베딩용 (서버사이드만)
+ANTHROPIC_API_KEY=           # Claude API (Pages Functions에서만)
 ```
 
 ## Supabase 데이터베이스 스키마
@@ -150,7 +150,7 @@ ANTHROPIC_API_KEY=           # Claude API (Edge Function에서만)
 | topic | TEXT | 단원 |
 | difficulty | TEXT | 난이도 (easy/medium/hard) |
 | source | TEXT | 출처 (aihub/manual) |
-| embedding | VECTOR(1536) | 벡터 임베딩 |
+| embedding | VECTOR(768) | 벡터 임베딩 (Gemini text-embedding-004) |
 
 ### generated_problems (AI가 생성한 문제)
 | 컬럼 | 타입 | 설명 |
@@ -191,7 +191,7 @@ ANTHROPIC_API_KEY=           # Claude API (Edge Function에서만)
 ### pgvector 검색 함수
 ```sql
 CREATE FUNCTION search_similar_problems(
-  query_embedding VECTOR(1536),
+  query_embedding VECTOR(768),
   match_grade TEXT,
   match_topic TEXT,
   match_count INT DEFAULT 5
