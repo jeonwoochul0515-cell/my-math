@@ -101,7 +101,24 @@ ${refText}
     /** Claude가 ```json 코드블록으로 감쌀 경우 제거 */
     text = text.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
 
-    return new Response(JSON.stringify({ problems: JSON.parse(text) }), {
+    const problems = JSON.parse(text) as { content?: string; answer?: string; choices?: string[]; solution?: string }[];
+
+    /** 서버 검증: 정답이 보기에 포함되어 있는지 확인 */
+    const validated = problems.filter((p) => {
+      if (!p.content || !p.answer || !Array.isArray(p.choices)) return false;
+      if (p.choices.length !== 4) return false;
+      if (!p.choices.includes(p.answer)) return false;
+      return true;
+    });
+
+    if (validated.length === 0) {
+      return new Response(JSON.stringify({ error: '생성된 문제가 검증을 통과하지 못했습니다. 다시 시도해주세요.' }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ problems: validated }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

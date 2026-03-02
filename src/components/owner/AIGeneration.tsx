@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Printer, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useProblems } from '../../hooks/useProblems';
@@ -39,6 +39,7 @@ export default function AIGeneration() {
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [count, setCount] = useState(5);
   const [generatedProblems, setGeneratedProblems] = useState<Problem[]>([]);
+  const [showAnswers, setShowAnswers] = useState(false);
 
   /** 학년 변경 시 단원을 첫 번째로 초기화 */
   const handleGradeChange = (newGrade: string) => {
@@ -71,7 +72,7 @@ export default function AIGeneration() {
       <h2 className="text-xl font-bold text-gray-900">AI 문제 생성</h2>
 
       {/* 조건 입력 폼 */}
-      <div className="rounded-xl bg-white p-5 shadow-sm space-y-4">
+      <div className="rounded-xl bg-white p-5 shadow-sm space-y-4" data-no-print>
         {/* 학년 선택 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
@@ -125,12 +126,26 @@ export default function AIGeneration() {
       {/* 생성된 문제 목록 */}
       {generatedProblems.length > 0 && (
         <div className="rounded-xl bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold text-gray-900">
-            생성된 문제 ({generatedProblems.length}개)
-          </h3>
+          <div className="mb-4 flex items-center justify-between" data-no-print>
+            <h3 className="text-base font-semibold text-gray-900">
+              생성된 문제 ({generatedProblems.length}개)
+            </h3>
+            <div className="flex gap-2">
+              <button onClick={() => setShowAnswers((v) => !v)}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                {showAnswers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showAnswers ? '정답지 숨기기' : '정답지 보기'}
+              </button>
+              <button onClick={() => window.print()}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <Printer className="h-4 w-4" />
+                프린트
+              </button>
+            </div>
+          </div>
           <div className="space-y-6">
             {generatedProblems.map((problem, index) => (
-              <ProblemCard key={problem.id} problem={problem} index={index + 1} />
+              <ProblemCard key={problem.id} problem={problem} index={index + 1} showAnswer={showAnswers} />
             ))}
           </div>
         </div>
@@ -149,7 +164,7 @@ export default function AIGeneration() {
 }
 
 /** 생성된 문제 카드 컴포넌트 */
-function ProblemCard({ problem, index }: { problem: Problem; index: number }) {
+function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: number; showAnswer: boolean }) {
   const answerIndex = problem.choices.indexOf(problem.answer);
   const answerLabel = answerIndex >= 0 ? String.fromCharCode(65 + answerIndex) : '-';
 
@@ -161,22 +176,23 @@ function ProblemCard({ problem, index }: { problem: Problem; index: number }) {
         <div className="grid grid-cols-2 gap-2">
           {problem.choices.map((c, i) => {
             const label = String.fromCharCode(65 + i);
-            const isAnswer = c === problem.answer;
             return (
               <div key={label}
-                className={`rounded-lg border px-3 py-2 text-sm ${isAnswer ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 text-gray-700'}`}>
+                className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
                 {label}. {c}
               </div>
             );
           })}
         </div>
       )}
-      <div className="rounded-lg bg-gray-50 p-3">
-        <p className="text-xs font-medium text-gray-500 mb-1">정답: {answerLabel} ({problem.answer})</p>
-        {problem.solution && (
-          <p className="text-xs text-gray-600 leading-relaxed">풀이: {problem.solution}</p>
-        )}
-      </div>
+      {showAnswer && (
+        <div className="rounded-lg bg-gray-50 p-3">
+          <p className="text-xs font-medium text-gray-500 mb-1">정답: {answerLabel} ({problem.answer})</p>
+          {problem.solution && (
+            <p className="text-xs text-gray-600 leading-relaxed">풀이: {problem.solution}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
