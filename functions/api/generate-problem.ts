@@ -90,7 +90,10 @@ ${refText}
     }
 
     const result = (await response.json()) as { content: { type: string; text: string }[] };
-    const text = result.content[0]?.text ?? '[]';
+    let text = result.content[0]?.text ?? '[]';
+
+    /** Claude가 ```json 코드블록으로 감쌀 경우 제거 */
+    text = text.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
 
     return new Response(JSON.stringify({ problems: JSON.parse(text) }), {
       status: 200,
