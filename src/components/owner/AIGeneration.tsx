@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useProblems } from '../../hooks/useProblems';
 import Loading from '../common/Loading';
+import MathText from '../common/MathText';
 import type { Problem } from '../../types';
 
 /** 학년-단원 매핑 (2022 개정 교육과정 기준) */
@@ -171,7 +172,9 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
   return (
     <div className="space-y-3 border-b border-gray-100 pb-5 last:border-0 last:pb-0">
       <p className="text-sm font-medium text-blue-600">문제 {String(index)}</p>
-      <p className="text-sm leading-relaxed text-gray-800">{problem.content}</p>
+      <p className="text-sm leading-relaxed text-gray-800">
+        <MathText text={problem.content} />
+      </p>
       {problem.choices.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {problem.choices.map((c, i) => {
@@ -179,7 +182,7 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
             return (
               <div key={label}
                 className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
-                {label}. {c}
+                {label}. <MathText text={c} />
               </div>
             );
           })}
@@ -187,9 +190,13 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
       )}
       {showAnswer && (
         <div className="rounded-lg bg-gray-50 p-3">
-          <p className="text-xs font-medium text-gray-500 mb-1">정답: {answerLabel} ({problem.answer})</p>
+          <p className="text-xs font-medium text-gray-500 mb-1">
+            정답: {answerLabel} (<MathText text={problem.answer} />)
+          </p>
           {problem.solution && (
-            <p className="text-xs text-gray-600 leading-relaxed">풀이: {problem.solution}</p>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              풀이: <MathText text={problem.solution} />
+            </p>
           )}
         </div>
       )}
