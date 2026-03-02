@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Loader2, Printer, Eye, EyeOff } from 'lucide-react';
+import { Sparkles, Loader2, Printer, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useProblems } from '../../hooks/useProblems';
@@ -26,10 +26,18 @@ const DIFFICULTIES = [
   { value: 'hard', label: '어려움' },
 ] as const;
 
+const DIFFICULTY_LABEL: Record<string, string> = { easy: '쉬움', medium: '보통', hard: '어려움' };
+
 /** 학년 목록 */
 const GRADES = Object.keys(CURRICULUM);
 
-/** AI 문제 생성 페이지 - 조건 설정 및 문제 미리보기 */
+/** 오늘 날짜 (YYYY.MM.DD) */
+function todayString(): string {
+  const d = new Date();
+  return `${String(d.getFullYear())}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** AI 문제 생성 페이지 */
 export default function AIGeneration() {
   const { user } = useAuth();
   const { academy, loading: academyLoading } = useAcademy(user?.uid ?? null);
@@ -50,6 +58,7 @@ export default function AIGeneration() {
 
   /** 문제 생성 실행 */
   const handleGenerate = async () => {
+    setShowAnswers(false);
     const results = await generate(grade, topic, difficulty, count);
     if (results.length > 0) {
       setGeneratedProblems(results);
@@ -68,12 +77,32 @@ export default function AIGeneration() {
     );
   }
 
+  const hasProblems = generatedProblems.length > 0;
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900">AI 문제 생성</h2>
+      {/* ========== 프린트 전용 시험지 헤더 ========== */}
+      {hasProblems && (
+        <div className="hidden print:block print:mb-6">
+          <div className="border-b-2 border-black pb-3 mb-4">
+            <h1 className="text-center text-xl font-bold">{academy.name} 수학 문제지</h1>
+            <div className="mt-2 flex justify-between text-sm">
+              <span>{grade} · {topic} · {DIFFICULTY_LABEL[difficulty] ?? difficulty}</span>
+              <span>{todayString()}</span>
+            </div>
+            <div className="mt-2 flex gap-8 text-sm">
+              <span>이름: ________________</span>
+              <span>점수: ______ / {String(generatedProblems.length * 10)}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* 조건 입력 폼 */}
-      <div className="rounded-xl bg-white p-5 shadow-sm space-y-4" data-no-print>
+      {/* ========== 화면 전용: 제목 ========== */}
+      <h2 className="text-xl font-bold text-gray-900 print:hidden">AI 문제 생성</h2>
+
+      {/* ========== 화면 전용: 조건 입력 폼 ========== */}
+      <div className="rounded-xl bg-white p-5 shadow-sm space-y-4 print:hidden">
         {/* 학년 선택 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
@@ -120,41 +149,58 @@ export default function AIGeneration() {
         <button onClick={handleGenerate} disabled={generating}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
           {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {generating ? '생성 중...' : '문제 생성'}
+          {generating ? '생성 및 검증 중...' : '문제 생성'}
         </button>
+
+        {generating && (
+          <p className="text-xs text-gray-400">AI가 문제를 생성하고 독립 검증합니다. 최대 30초 소요될 수 있습니다.</p>
+        )}
       </div>
 
-      {/* 생성된 문제 목록 */}
-      {generatedProblems.length > 0 && (
-        <div className="rounded-xl bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between" data-no-print>
-            <h3 className="text-base font-semibold text-gray-900">
-              생성된 문제 ({generatedProblems.length}개)
-            </h3>
+      {/* ========== 생성된 문제 영역 ========== */}
+      {hasProblems && (
+        <div className="rounded-xl bg-white p-5 shadow-sm print:shadow-none print:p-0 print:rounded-none">
+          {/* 화면 전용: 툴바 */}
+          <div className="mb-5 flex items-center justify-between print:hidden">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <span className="text-sm font-medium text-gray-700">
+                검증 완료 {generatedProblems.length}문제
+              </span>
+            </div>
             <div className="flex gap-2">
               <button onClick={() => setShowAnswers((v) => !v)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  showAnswers
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}>
                 {showAnswers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {showAnswers ? '정답지 숨기기' : '정답지 보기'}
+                {showAnswers ? '정답 숨기기' : '정답 보기'}
               </button>
               <button onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 <Printer className="h-4 w-4" />
                 프린트
               </button>
             </div>
           </div>
-          <div className="space-y-6">
+
+          {/* 문제 목록 */}
+          <div className="space-y-6 print:space-y-4">
             {generatedProblems.map((problem, index) => (
               <ProblemCard key={problem.id} problem={problem} index={index + 1} showAnswer={showAnswers} />
             ))}
           </div>
+
+          {/* 정답표 (토글 시 화면 + 프린트 모두 표시) */}
+          {showAnswers && <AnswerKeyTable problems={generatedProblems} />}
         </div>
       )}
 
       {/* 빈 상태 */}
-      {generatedProblems.length === 0 && !generating && (
-        <div className="rounded-xl bg-white p-5 shadow-sm">
+      {!hasProblems && !generating && (
+        <div className="rounded-xl bg-white p-5 shadow-sm print:hidden">
           <p className="py-6 text-center text-sm text-gray-400">
             위에서 조건을 설정한 후 문제를 생성해보세요.
           </p>
@@ -164,42 +210,72 @@ export default function AIGeneration() {
   );
 }
 
-/** 생성된 문제 카드 컴포넌트 */
+/** 보기 원문자 ①②③④ */
+const CIRCLE_NUMS = ['①', '②', '③', '④'];
+
+/** 문제 카드 */
 function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: number; showAnswer: boolean }) {
   const answerIndex = problem.choices.indexOf(problem.answer);
-  const answerLabel = answerIndex >= 0 ? String.fromCharCode(65 + answerIndex) : '-';
 
   return (
-    <div className="space-y-3 border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-      <p className="text-sm font-medium text-blue-600">문제 {String(index)}</p>
-      <p className="text-sm leading-relaxed text-gray-800">
-        <MathText text={problem.content} />
-      </p>
+    <div className="pb-5 border-b border-gray-100 last:border-0 last:pb-0 print:pb-4 print:border-gray-300">
+      {/* 문제 번호 + 내용 */}
+      <div className="flex gap-2 mb-3">
+        <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white print:bg-black">
+          {String(index)}
+        </span>
+        <p className="text-sm leading-relaxed text-gray-800 pt-0.5">
+          <MathText text={problem.content} />
+        </p>
+      </div>
+
+      {/* 보기 */}
       {problem.choices.length > 0 && (
-        <div className="grid grid-cols-2 gap-2">
-          {problem.choices.map((c, i) => {
-            const label = String.fromCharCode(65 + i);
-            return (
-              <div key={label}
-                className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
-                {label}. <MathText text={c} />
-              </div>
-            );
-          })}
+        <div className="ml-8 grid grid-cols-2 gap-x-4 gap-y-1.5">
+          {problem.choices.map((c, i) => (
+            <div key={CIRCLE_NUMS[i]} className="flex items-baseline gap-1.5 text-sm text-gray-700">
+              <span className="shrink-0">{CIRCLE_NUMS[i]}</span>
+              <MathText text={c} />
+            </div>
+          ))}
         </div>
       )}
+
+      {/* 정답/풀이 (토글 시) */}
       {showAnswer && (
-        <div className="rounded-lg bg-gray-50 p-3">
-          <p className="text-xs font-medium text-gray-500 mb-1">
-            정답: {answerLabel} (<MathText text={problem.answer} />)
+        <div className="ml-8 mt-3 rounded-lg bg-blue-50 p-3 border border-blue-100 print:bg-white print:border-gray-300">
+          <p className="text-xs font-semibold text-blue-700 mb-1">
+            정답: {answerIndex >= 0 ? CIRCLE_NUMS[answerIndex] : '-'} <MathText text={problem.answer} />
           </p>
           {problem.solution && (
             <p className="text-xs text-gray-600 leading-relaxed">
-              풀이: <MathText text={problem.solution} />
+              <MathText text={problem.solution} />
             </p>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** 정답표 (하단 요약) */
+function AnswerKeyTable({ problems }: { problems: Problem[] }) {
+  return (
+    <div className="mt-6 pt-4 border-t border-gray-200 print:border-black print:mt-8 print:pt-6">
+      <h4 className="text-sm font-bold text-gray-900 mb-3">정답표</h4>
+      <div className="grid grid-cols-5 gap-2 sm:grid-cols-10">
+        {problems.map((p, i) => {
+          const ai = p.choices.indexOf(p.answer);
+          return (
+            <div key={p.id} className="flex flex-col items-center rounded border border-gray-200 py-1.5 text-xs print:border-gray-400">
+              <span className="font-bold text-gray-500">{String(i + 1)}</span>
+              <span className="font-semibold text-blue-700 print:text-black">
+                {ai >= 0 ? CIRCLE_NUMS[ai] : '-'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
