@@ -28,31 +28,29 @@ function toSolveLog(row: Record<string, unknown>): SolveLog {
   };
 }
 
-/** AI 문제 생성 API 호출 */
+/** AI 문제 생성 (하이브리드 검색 + Claude 리랭킹 + 생성) */
 export async function generateProblems(
   grade: string,
   topic: string,
   difficulty: string,
   count: number
 ): Promise<Problem[]> {
-  const response = await fetch('/api/generate-problem', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grade, topic, difficulty, count }),
-  });
-  if (!response.ok) throw new Error('문제 생성에 실패했습니다.');
-  const result = (await response.json()) as {
-    problems: Record<string, unknown>[];
-  };
-  return result.problems.map((p, i) => ({
-    id: `gen-${Date.now()}-${String(i)}`,
-    content: p.content as string,
-    answer: p.answer as string,
-    solution: (p.solution as string) ?? '',
+  const { generateProblemsWithRAG } = await import('./ai');
+  const results = await generateProblemsWithRAG({
     grade,
     topic,
     difficulty: difficulty as 'easy' | 'medium' | 'hard',
-    choices: (p.choices as string[]) ?? [],
+    count,
+  });
+  return results.map((p) => ({
+    id: p.id,
+    content: p.content,
+    answer: p.answer,
+    solution: p.solution,
+    grade: p.grade,
+    topic: p.topic,
+    difficulty: p.difficulty as 'easy' | 'medium' | 'hard',
+    choices: p.choices,
     source: 'ai-generated' as const,
   }));
 }

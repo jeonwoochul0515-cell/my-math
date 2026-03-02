@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, RecaptchaVerifier } from 'firebase/auth';
 
 /** Firebase 설정 - 환경변수에서 읽기 */
 const firebaseConfig = {
@@ -16,5 +16,19 @@ const app = initializeApp(firebaseConfig);
 
 /** Firebase 인증 인스턴스 */
 export const auth = getAuth(app);
+
+/**
+ * reCAPTCHA 인증기 생성
+ * - 전화번호 인증 시 봇 방지를 위해 invisible reCAPTCHA 사용
+ * - 컨테이너 DOM 요소의 id를 인자로 받음
+ */
+export function createRecaptchaVerifier(containerId: string): RecaptchaVerifier {
+  return new RecaptchaVerifier(auth, containerId, {
+    size: 'invisible',
+    callback: () => {
+      /** reCAPTCHA 인증 성공 시 콜백 (별도 처리 없음) */
+    },
+  });
+}
 
 export default app;

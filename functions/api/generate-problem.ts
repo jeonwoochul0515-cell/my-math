@@ -10,6 +10,7 @@ interface RequestBody {
   difficulty: 'easy' | 'medium' | 'hard';
   count: number;
   referenceProblems?: { content: string; answer: string; solution: string }[];
+  curriculumContext?: string;
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -24,7 +25,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   try {
     const body = (await context.request.json()) as RequestBody;
-    const { grade, topic, difficulty, count, referenceProblems } = body;
+    const { grade, topic, difficulty, count, referenceProblems, curriculumContext } = body;
 
     const difficultyMap: Record<string, string> = {
       easy: '쉬움 (기본 개념 확인)',
@@ -36,6 +37,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       ? `\n\n참고 문제:\n${referenceProblems.map((p, i) => `${i + 1}. ${p.content}\n정답: ${p.answer}\n풀이: ${p.solution}`).join('\n\n')}`
       : '';
 
+    const curriculumBlock = curriculumContext
+      ? `\n\n2022 개정 교육과정 성취기준 (반드시 이 범위 내에서 출제하세요):\n${curriculumContext}`
+      : '';
+
     const prompt = `당신은 한국 수학 교육 전문가입니다.
 아래 조건에 맞는 수학 문제를 ${count}개 생성하세요.
 
@@ -43,7 +48,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 - 학년: ${grade}
 - 단원: ${topic}
 - 난이도: ${difficultyMap[difficulty] ?? difficulty}
+${curriculumBlock}
 ${refText}
+
+중요 지침:
+- 교육과정 성취기준에 명시된 범위를 벗어나지 마세요.
+- "다루지 않는다"로 명시된 내용은 절대 포함하지 마세요.
+- 성취기준 적용 시 고려 사항에 따라 난이도를 조절하세요.
+- 참고 문제와 동일한 문제를 만들지 마세요. 새로운 문제여야 합니다.
 
 반드시 아래 JSON 형식으로만 응답하세요:
 [
@@ -53,9 +65,7 @@ ${refText}
     "answer": "정답 (보기 중 하나)",
     "solution": "상세 풀이 과정"
   }
-]
-
-참고 문제와 동일한 문제를 만들지 마세요. 새로운 문제여야 합니다.`;
+]`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

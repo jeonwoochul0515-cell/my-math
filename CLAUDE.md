@@ -25,7 +25,7 @@
 - **호스팅**: Cloudflare Pages
 - **AI 문제 생성**: Claude API (Cloudflare Pages Functions에서 호출)
 - **벡터 검색**: Supabase pgvector (문제 유사도 검색)
-- **임베딩**: Google Gemini Embedding API (text-embedding-004, 768차원)
+- **임베딩**: Voyage AI Embedding API (voyage-3, 1024차원)
 
 ## 폴더 구조
 
@@ -93,7 +93,8 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-GEMINI_API_KEY=              # 임베딩용 (서버사이드만)
+GEMINI_API_KEY=              # (미사용, Voyage AI로 대체)
+VOYAGE_API_KEY=              # 임베딩용 (서버사이드 + Pages Functions)
 ANTHROPIC_API_KEY=           # Claude API (Pages Functions에서만)
 ```
 
@@ -150,7 +151,7 @@ ANTHROPIC_API_KEY=           # Claude API (Pages Functions에서만)
 | topic | TEXT | 단원 |
 | difficulty | TEXT | 난이도 (easy/medium/hard) |
 | source | TEXT | 출처 (aihub/manual) |
-| embedding | VECTOR(768) | 벡터 임베딩 (Gemini text-embedding-004) |
+| embedding | VECTOR(1024) | 벡터 임베딩 (Voyage AI voyage-3) |
 
 ### generated_problems (AI가 생성한 문제)
 | 컬럼 | 타입 | 설명 |
@@ -188,23 +189,14 @@ ANTHROPIC_API_KEY=           # Claude API (Pages Functions에서만)
 | is_read | BOOLEAN | 읽음 여부 |
 | created_at | TIMESTAMPTZ | |
 
-### pgvector 검색 함수
-```sql
-CREATE FUNCTION search_similar_problems(
-  query_embedding VECTOR(768),
-  match_grade TEXT,
-  match_topic TEXT,
-  match_count INT DEFAULT 5
-) RETURNS TABLE (id BIGINT, content TEXT, answer TEXT, solution TEXT, similarity FLOAT)
-AS $$
-  SELECT id, content, answer, solution,
-         1 - (embedding <=> query_embedding) AS similarity
-  FROM problem_embeddings
-  WHERE grade = match_grade AND topic = match_topic
-  ORDER BY embedding <=> query_embedding
-  LIMIT match_count;
-$$ LANGUAGE sql;
-```
+### 검색 함수
+
+**벡터 전용 (폴백용):** `search_similar_problems(query_embedding, match_grade, match_topic, match_count)`
+
+**하이브리드 검색 (메인):** `search_problems_hybrid(query_embedding, query_text, match_grade, match_topic, match_count, vector_weight, fulltext_weight, rrf_k)`
+- 벡터 검색(Voyage AI, 가중 0.6) + 풀텍스트 검색(PostgreSQL tsvector, 가중 0.4)
+- RRF(Reciprocal Rank Fusion, k=60)로 두 결과 합산
+- 반환: id, content, answer, solution, difficulty, vector_similarity, fulltext_rank, rrf_score
 
 ## TypeScript 타입 정의 (src/types/index.ts)
 
@@ -298,25 +290,31 @@ export interface WeaknessReport {
 - Tailwind CSS만 사용 (인라인 스타일, CSS 모듈 사용 금지)
 - 모든 화면 모바일 우선 설계
 
-## AI 문제 생성 로직 (RAG 방식)
+## AI 문제 생성 로직 (하이브리드 RAG 방식)
 
 ```
 학생/원장이 문제 요청
   ↓
 1. 요청 조건 (학년, 단원, 난이도) 확인
   ↓
-2. Supabase pgvector에서 비슷한 문제 5개 검색
-   (search_similar_problems 함수 호출)
+2. 하이브리드 검색 (search_problems_hybrid)
+   - Voyage AI 벡터 검색: 의미적 유사도 상위 20개
+   - PostgreSQL 풀텍스트 검색: 키워드 매칭 상위 20개
+   - RRF(Reciprocal Rank Fusion)로 합산 → 상위 10개
   ↓
-3. Supabase Edge Function 호출
-   → 참고 문제 5개 + 조건을 Claude API에 전달
-   → 프롬프트: "아래 참고 문제를 바탕으로 새로운 문제를 만들어라.
-      반드시 참고 문제와 다른 새 문제여야 한다.
-      보기 4개, 정답, 풀이과정 포함. JSON 형식으로."
+3. Claude 리랭킹 (/api/rerank)
+   - 10개 후보 중 최적 참고 문제 5개 선택
+   - 핵심 개념 적합도, 난이도 일치, 유형 다양성 기준
   ↓
-4. 생성된 문제를 generated_problems 테이블에 저장
+4. Claude API로 문제 생성 (/api/generate-problem)
+   - 선택된 참고 문제 5개 + 조건을 Claude에 전달
+   - 새로운 문제 생성 (보기 4개, 정답, 풀이과정)
   ↓
-5. 학생에게 표시
+5. generated_problems 테이블에 저장
+   - source_refs: 참고한 원본 문제 ID 배열
+   - similarity_score: 평균 유사도 점수
+  ↓
+6. 학생에게 표시
 ```
 
 ## 코딩 규칙
@@ -331,18 +329,24 @@ export interface WeaknessReport {
 8. **환경변수**: 비밀키는 절대 코드에 직접 쓰지 않고 .env에서 읽기
 9. **Supabase RLS**: 모든 테이블에 Row Level Security 활성화 (자기 학원 데이터만 접근)
 
-## 수학 교과 단원 체계 (문제 분류용)
+## 수학 교과 단원 체계 (2022 개정 교육과정)
 
 ### 중학교
-- 중1: 자연수와 정수, 유리수, 일차방정식, 좌표와 그래프, 비례와 반비례, 기본 도형, 작도와 합동, 통계
-- 중2: 유리수와 순환소수, 식의 계산, 일차부등식, 연립방정식, 일차함수, 삼각형과 사각형, 확률
-- 중3: 제곱근과 실수, 다항식의 곱셈과 인수분해, 이차방정식, 이차함수, 삼각비, 원, 통계
+- 중1: 소인수분해, 정수와 유리수, 문자와 식, 일차방정식, 좌표평면과 그래프, 정비례와 반비례, 기본 도형, 작도와 합동, 평면도형의 성질, 입체도형의 성질, 자료의 정리와 해석
+- 중2: 유리수와 순환소수, 식의 계산, 일차부등식, 연립방정식, 일차함수, 삼각형의 성질, 사각형의 성질, 도형의 닮음, 확률
+- 중3: 제곱근과 실수, 다항식의 곱셈과 인수분해, 이차방정식, 이차함수, 삼각비, 원의 성질, 대푯값과 산포도, 상관관계
 
-### 고등학교
-- 수학(상): 다항식, 방정식과 부등식, 도형의 방정식
-- 수학(하): 집합과 명제, 함수와 그래프, 경우의 수
-- 수학I: 지수와 로그, 삼각함수, 수열
-- 수학II: 함수의 극한과 연속, 미분, 적분
+### 고등학교 (공통과목)
+- 공통수학1: 다항식, 방정식과 부등식, 도형의 방정식
+- 공통수학2: 집합과 명제, 함수, 경우의 수
+
+### 고등학교 (일반선택)
+- 대수: 지수와 로그, 수열
+- 미적분I: 삼각함수, 함수의 극한과 연속, 미분, 적분
+- 확률과 통계: 순열과 조합, 확률, 통계
+
+### 고등학교 (진로선택)
+- 미적분II, 기하, 경제수학, 인공지능 수학, 직무수학
 
 ## AIHub 데이터 출처 표기 (필수)
 

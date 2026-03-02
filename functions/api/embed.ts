@@ -1,22 +1,22 @@
-/** Gemini 임베딩 API - 문제 벡터화 */
+/** Voyage AI 임베딩 API - 문제 벡터화 (Cloudflare Pages Function) */
 
 interface Env {
-  GEMINI_API_KEY: string;
+  VOYAGE_API_KEY: string;
 }
 
 interface RequestBody {
   texts: string[];
 }
 
-interface GeminiEmbeddingResponse {
-  embeddings: { values: number[] }[];
+interface VoyageEmbeddingResponse {
+  data: { embedding: number[]; index: number }[];
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const { GEMINI_API_KEY } = context.env;
+  const { VOYAGE_API_KEY } = context.env;
 
-  if (!GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: 'Gemini API 키가 설정되지 않았습니다.' }), {
+  if (!VOYAGE_API_KEY) {
+    return new Response(JSON.stringify({ error: 'Voyage AI API 키가 설정되지 않았습니다.' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -33,16 +33,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents?key=${GEMINI_API_KEY}`;
-
-    const response = await fetch(url, {
+    const response = await fetch('https://api.voyageai.com/v1/embeddings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${VOYAGE_API_KEY}`,
+      },
       body: JSON.stringify({
-        requests: texts.map((text) => ({
-          model: 'models/text-embedding-004',
-          content: { parts: [{ text }] },
-        })),
+        input: texts,
+        model: 'voyage-3',
       }),
     });
 
@@ -54,9 +53,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const result = (await response.json()) as GeminiEmbeddingResponse;
+    const result = (await response.json()) as VoyageEmbeddingResponse;
 
-    return new Response(JSON.stringify({ embeddings: result.embeddings.map((e) => e.values) }), {
+    /** index 순 정렬 후 기존 응답 형식과 호환되게 반환 */
+    const sorted = result.data.sort((a, b) => a.index - b.index);
+
+    return new Response(JSON.stringify({ embeddings: sorted.map((d) => d.embedding) }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
