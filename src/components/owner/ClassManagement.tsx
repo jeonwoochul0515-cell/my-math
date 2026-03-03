@@ -115,7 +115,7 @@ export default function ClassManagement() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">대상 학년</label>
               <select value={formGrade} onChange={(e) => setFormGrade(e.target.value)} className={INPUT_CLASS}>
-                {['중1','중2','중3','고1','고2','고3'].map((g) => <option key={g} value={g}>{g}</option>)}
+                {['초1','초2','초3','초4','초5','초6','중1','중2','중3','고1','고2','고3'].map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
             <div>

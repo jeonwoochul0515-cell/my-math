@@ -13,6 +13,12 @@ const MathFigure = lazy(() => import('../common/MathFigure'));
 
 /** 학년-단원 매핑 (2022 개정 교육과정 기준) */
 const CURRICULUM: Record<string, string[]> = {
+  초1: ['9까지의 수', '덧셈과 뺄셈(1)', '50까지의 수', '덧셈과 뺄셈(2)', '여러 가지 모양', '비교하기', '시계 보기'],
+  초2: ['세 자리 수', '덧셈과 뺄셈', '곱셈', '길이 재기', '분류하기', '곱셈구구', '시각과 시간', '규칙 찾기'],
+  초3: ['덧셈과 뺄셈', '평면도형', '나눗셈', '곱셈', '길이와 시간', '분수와 소수', '들이와 무게', '자료의 정리'],
+  초4: ['큰 수', '각도', '곱셈과 나눗셈', '평면도형의 이동', '막대그래프', '규칙 찾기', '분수의 덧셈과 뺄셈', '소수의 덧셈과 뺄셈', '사각형', '다각형', '꺾은선그래프'],
+  초5: ['자연수의 혼합 계산', '약수와 배수', '규칙과 대응', '약분과 통분', '분수의 덧셈과 뺄셈', '다각형의 둘레와 넓이', '수의 범위와 어림하기', '분수의 곱셈', '합동과 대칭', '소수의 곱셈', '평균과 가능성'],
+  초6: ['분수의 나눗셈', '각기둥과 각뿔', '소수의 나눗셈', '비와 비율', '여러 가지 그래프', '직육면체의 부피와 겉넓이', '비례식과 비례배분', '원의 넓이', '원기둥·원뿔·구', '비율 그래프', '경우의 수'],
   중1: ['소인수분해', '정수와 유리수', '문자와 식', '일차방정식', '좌표평면과 그래프', '정비례와 반비례', '기본 도형', '작도와 합동', '평면도형의 성질', '입체도형의 성질', '자료의 정리와 해석'],
   중2: ['유리수와 순환소수', '식의 계산', '일차부등식', '연립방정식', '일차함수', '삼각형의 성질', '사각형의 성질', '도형의 닮음', '확률'],
   중3: ['제곱근과 실수', '다항식의 곱셈과 인수분해', '이차방정식', '이차함수', '삼각비', '원의 성질', '대푯값과 산포도', '상관관계'],
@@ -142,7 +148,7 @@ export default function AIGeneration() {
         {/* 문제 수 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">문제 수</label>
-          <input type="number" min={1} max={10} value={count} onChange={(e) => setCount(Number(e.target.value))}
+          <input type="number" min={1} max={10} value={count} onChange={(e) => setCount(Math.max(1, Math.min(10, Math.floor(Number(e.target.value)) || 1)))}
             className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
         </div>
 
@@ -222,7 +228,7 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
   const answerIndex = problem.choices.indexOf(problem.answer);
 
   return (
-    <div className="pb-5 border-b border-gray-100 last:border-0 last:pb-0 print:pb-4 print:border-gray-300">
+    <div className="problem-card pb-5 border-b border-gray-100 last:border-0 last:pb-0 print:pb-4 print:border-gray-300">
       {/* 문제 번호 + 내용 */}
       <div className="flex gap-2 mb-3">
         <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white print:bg-black">
@@ -245,8 +251,8 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
       {problem.choices.length > 0 && (
         <div className="ml-8 grid grid-cols-2 gap-x-4 gap-y-1.5">
           {problem.choices.map((c, i) => (
-            <div key={CIRCLE_NUMS[i]} className="flex items-baseline gap-1.5 text-sm text-gray-700">
-              <span className="shrink-0">{CIRCLE_NUMS[i]}</span>
+            <div key={CIRCLE_NUMS[i] ?? String(i + 1)} className="flex items-baseline gap-1.5 text-sm text-gray-700">
+              <span className="shrink-0">{CIRCLE_NUMS[i] ?? String(i + 1)}</span>
               <MathText text={c} />
             </div>
           ))}

@@ -8,7 +8,7 @@ import Loading from '../common/Loading';
 import type { Student, Class } from '../../types';
 
 /** 학년 선택 옵션 */
-const GRADE_OPTIONS = ['중1', '중2', '중3', '고1', '고2', '고3'] as const;
+const GRADE_OPTIONS = ['초1', '초2', '초3', '초4', '초5', '초6', '중1', '중2', '중3', '고1', '고2', '고3'] as const;
 
 /** 입력 필드 공통 스타일 */
 const INPUT_CLASS =
