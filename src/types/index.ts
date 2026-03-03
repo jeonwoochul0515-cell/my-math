@@ -43,6 +43,25 @@ export interface AttendanceRecord {
   date: string;
 }
 
+/** JSXGraph 도형/그래프 요소 */
+export type FigureElement =
+  | { type: 'point'; name: string; coords: [number, number]; label?: boolean }
+  | { type: 'segment'; from: string; to: string }
+  | { type: 'line'; from: string; to: string; dash?: boolean }
+  | { type: 'circle'; center: string; radius?: number; through?: string }
+  | { type: 'polygon'; vertices: string[] }
+  | { type: 'angle'; points: [string, string, string]; label?: string }
+  | { type: 'functiongraph'; fn: string; range?: [number, number] }
+  | { type: 'text'; coords: [number, number]; value: string };
+
+/** JSXGraph 도형/그래프 명세 */
+export interface FigureSpec {
+  boundingBox: [number, number, number, number];
+  elements: FigureElement[];
+  axis?: boolean;
+  grid?: boolean;
+}
+
 /** 문제 */
 export interface Problem {
   id: string;
@@ -54,6 +73,7 @@ export interface Problem {
   difficulty: 'easy' | 'medium' | 'hard';
   choices: string[];
   source: 'aihub' | 'ai-generated' | 'manual';
+  figure?: FigureSpec;
 }
 
 /** 풀이 기록 */

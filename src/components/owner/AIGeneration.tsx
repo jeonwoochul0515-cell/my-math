@@ -3,9 +3,13 @@ import { Sparkles, Loader2, Printer, Eye, EyeOff, CheckCircle } from 'lucide-rea
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useProblems } from '../../hooks/useProblems';
+import { lazy, Suspense } from 'react';
 import Loading from '../common/Loading';
 import MathText from '../common/MathText';
 import type { Problem } from '../../types';
+
+/** JSXGraph 컴포넌트는 무겁기 때문에 lazy load */
+const MathFigure = lazy(() => import('../common/MathFigure'));
 
 /** 학년-단원 매핑 (2022 개정 교육과정 기준) */
 const CURRICULUM: Record<string, string[]> = {
@@ -224,9 +228,17 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
         <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white print:bg-black">
           {String(index)}
         </span>
-        <p className="text-sm leading-relaxed text-gray-800 pt-0.5">
-          <MathText text={problem.content} />
-        </p>
+        <div className="pt-0.5">
+          <p className="text-sm leading-relaxed text-gray-800">
+            <MathText text={problem.content} />
+          </p>
+          {/* 도형/그래프 */}
+          {problem.figure && (
+            <Suspense fallback={<div className="h-[280px] w-[280px] flex items-center justify-center text-xs text-gray-400">도형 로딩 중...</div>}>
+              <MathFigure spec={problem.figure} className="mt-2 mb-1 print:mx-0" />
+            </Suspense>
+          )}
+        </div>
       </div>
 
       {/* 보기 */}

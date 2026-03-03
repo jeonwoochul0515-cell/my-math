@@ -48,6 +48,7 @@ export interface GeneratedProblem {
   grade: string;
   topic: string;
   difficulty: string;
+  figure?: Record<string, unknown>;
 }
 
 /** 문제 생성 요청 파라미터 */
@@ -513,6 +514,7 @@ export async function generateProblemsWithRAG(
         answer: string;
         solution: string;
         choices: string[];
+        figure?: Record<string, unknown>;
       }[];
     };
 
@@ -551,6 +553,7 @@ export async function generateProblemsWithRAG(
           grade,
           topic,
           difficulty,
+          figure: problem.figure,
         });
         continue;
       }
@@ -565,6 +568,7 @@ export async function generateProblemsWithRAG(
         grade: row.grade as string,
         topic: row.topic as string,
         difficulty: row.difficulty as string,
+        figure: problem.figure,
       });
     }
 

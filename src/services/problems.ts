@@ -52,6 +52,7 @@ export async function generateProblems(
     difficulty: p.difficulty as 'easy' | 'medium' | 'hard',
     choices: p.choices,
     source: 'ai-generated' as const,
+    figure: p.figure as Problem['figure'],
   }));
 }
 

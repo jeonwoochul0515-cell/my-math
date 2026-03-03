@@ -13,11 +13,24 @@ interface RequestBody {
   curriculumContext?: string;
 }
 
+interface FigureElement {
+  type: string;
+  [key: string]: unknown;
+}
+
+interface FigureSpec {
+  boundingBox: [number, number, number, number];
+  elements: FigureElement[];
+  axis?: boolean;
+  grid?: boolean;
+}
+
 interface RawProblem {
   content: string;
   answer: string;
   choices: string[];
   solution: string;
+  figure?: FigureSpec;
 }
 
 interface VerifyResult {
@@ -97,6 +110,45 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       ? `\n\n2022 개정 교육과정 성취기준 (반드시 이 범위 내에서 출제하세요):\n${curriculumContext}`
       : '';
 
+    /** 도형/그래프가 필요한 단원인지 판별 */
+    const FIGURE_TOPICS = [
+      '기본 도형', '작도와 합동', '평면도형의 성질', '입체도형의 성질',
+      '삼각형의 성질', '사각형의 성질', '도형의 닮음', '삼각비', '원의 성질',
+      '도형의 방정식',
+      '좌표평면과 그래프', '정비례와 반비례', '일차함수', '이차함수',
+      '삼각함수', '함수의 극한과 연속', '미분', '적분', '함수',
+    ];
+    const needsFigure = FIGURE_TOPICS.some((t) => topic.includes(t) || t.includes(topic));
+
+    const figureBlock = needsFigure ? `
+도형/그래프 생성:
+이 단원은 도형이나 그래프가 필요합니다. 각 문제에 "figure" 필드를 추가하세요.
+figure는 다음 JSON 형식입니다:
+{
+  "boundingBox": [xmin, ymax, xmax, ymin],
+  "axis": true/false,
+  "grid": true/false,
+  "elements": [
+    { "type": "point", "name": "A", "coords": [x, y], "label": true },
+    { "type": "segment", "from": "A", "to": "B" },
+    { "type": "line", "from": "A", "to": "B", "dash": false },
+    { "type": "circle", "center": "A", "radius": 3 },
+    { "type": "circle", "center": "A", "through": "B" },
+    { "type": "polygon", "vertices": ["A", "B", "C"] },
+    { "type": "angle", "points": ["A", "B", "C"], "label": "60°" },
+    { "type": "functiongraph", "fn": "x*x - 2*x + 1", "range": [-3, 5] },
+    { "type": "text", "coords": [x, y], "value": "텍스트" }
+  ]
+}
+규칙:
+- 좌표평면/함수 문제: axis=true, grid=true, functiongraph 사용
+- 도형 문제: axis=false, point + segment/polygon/circle/angle 사용
+- point를 먼저 정의하고, 다른 요소에서 name으로 참조
+- fn 문자열에서 곱셈은 *, 거듭제곱은 ^, 삼각함수는 sin/cos/tan 사용
+- boundingBox는 도형이 잘 보이도록 여유있게 설정
+- 도형이 필요 없는 순수 계산 문제에는 figure를 생략하세요
+` : '';
+
     /** 여유분 포함하여 생성 (검증 탈락분 보충) */
     const generateCount = Math.min(count + 3, 10);
 
@@ -129,14 +181,14 @@ ${refText}
 - 교육과정 범위를 벗어나지 마세요.
 - 참고 문제와 동일한 문제를 만들지 마세요.
 - 풀이(solution)의 최종 계산 결과 = answer 필드 값 = choices 중 하나. 이 세 가지가 반드시 일치해야 합니다.
-
+${figureBlock}
 반드시 아래 JSON 형식으로만 응답하세요 (마크다운 코드블록 없이):
 [
   {
     "content": "문제 내용",
     "choices": ["보기1", "보기2", "보기3", "보기4"],
     "answer": "정답 (보기 중 하나와 동일)",
-    "solution": "상세 풀이 과정"
+    "solution": "상세 풀이 과정"${needsFigure ? ',\n    "figure": { "boundingBox": [...], "elements": [...], "axis": false, "grid": false }' : ''}
   }
 ]`;
 
