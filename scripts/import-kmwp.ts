@@ -102,14 +102,14 @@ function evalEquation(eq: string): string | null {
           break;
         }
         case '[OP_LIST_MAX]': {
-          const idx = popNum();
+          popNum(); // idx (사용하지 않음)
           const list = popList();
           const nums = numList(list);
           stack.push(nums.length > 0 ? Math.max(...nums) : 0);
           break;
         }
         case '[OP_LIST_MIN]': {
-          const idx = popNum();
+          popNum(); // idx (사용하지 않음)
           const list = popList();
           const nums = numList(list);
           stack.push(nums.length > 0 ? Math.min(...nums) : 0);

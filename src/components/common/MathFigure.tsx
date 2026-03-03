@@ -13,8 +13,6 @@ function loadJSXGraphCSS() {
 }
 
 /** functiongraph fn 문자열 허용 토큰 검증 (C5: new Function() 보안) */
-const ALLOWED_FN_PATTERN = /^[\d\s+\-*/().^x,eE]+$|^[\d\s+\-*/().^x,eE]*(Math\.(sin|cos|tan|abs|sqrt|log|exp|PI|pow|floor|ceil|round|min|max)[\d\s+\-*/().^x,eE]*)+$/;
-
 function isSafeFnString(fn: string): boolean {
   /** Math 함수명을 임시로 제거하고 남은 토큰이 안전한지 확인 */
   const stripped = fn
