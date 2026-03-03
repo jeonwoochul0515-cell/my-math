@@ -10,7 +10,7 @@
  */
 
 import { supabase } from '../config/supabase';
-import type { WeaknessReport } from '../types';
+import type { WeaknessReport, FigureSpec } from '../types';
 import { getCurriculumLookup } from '../utils/curriculumMapping';
 
 // ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ export interface GeneratedProblem {
   grade: string;
   topic: string;
   difficulty: string;
-  figure?: Record<string, unknown>;
+  figure?: FigureSpec;
 }
 
 /** 문제 생성 요청 파라미터 */
@@ -514,12 +514,18 @@ export async function generateProblemsWithRAG(
         answer: string;
         solution: string;
         choices: string[];
-        figure?: Record<string, unknown>;
+        figure?: FigureSpec;
       }[];
+      verified?: boolean;
     };
 
     if (!result.problems?.length) {
       throw new Error('생성된 문제가 없습니다.');
+    }
+
+    /** H7: 검증 스킵 시 경고 로그 */
+    if (result.verified === false) {
+      console.warn('AI 검증이 스킵되었습니다. 구조 검증만 통과한 문제가 반환됩니다.');
     }
 
     /** 5단계: 생성된 문제를 DB에 저장 (source_refs, similarity_score 포함) */

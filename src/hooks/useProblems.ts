@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import {
   generateProblems,
   getProblems,
-  saveProblem,
 } from '../services/problems';
 import type { Problem } from '../types';
 
@@ -49,21 +48,14 @@ export function useProblems(academyId: string | null) {
     ) => {
       setGenerating(true);
       try {
+        /** generateProblems → generateProblemsWithRAG가 이미 DB 저장 수행 */
         const generated = await generateProblems(
           grade,
           topic,
           difficulty,
           count
         );
-        if (academyId) {
-          const saved: Problem[] = [];
-          for (const p of generated) {
-            const s = await saveProblem(p, academyId);
-            saved.push(s);
-          }
-          setProblems((prev) => [...saved, ...prev]);
-          return saved;
-        }
+        setProblems((prev) => [...generated, ...prev]);
         return generated;
       } catch (err) {
         setError(

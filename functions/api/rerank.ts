@@ -93,8 +93,8 @@ ${candidateList}
     });
 
     if (!response.ok) {
-      /** 리랭킹 실패 시 RRF 점수 기준 상위 topK 반환 */
-      const fallbackIds = candidates
+      /** 리랭킹 실패 시 RRF 점수 기준 상위 topK 반환 (M11: 복사 후 정렬) */
+      const fallbackIds = [...candidates]
         .sort((a, b) => b.rrfScore - a.rrfScore)
         .slice(0, topK)
         .map((c) => c.id);
@@ -110,8 +110,8 @@ ${candidateList}
     /** JSON 배열 추출 (응답에 추가 텍스트가 있을 수 있음) */
     const jsonMatch = text.match(/\[[\d\s,]+\]/);
     if (!jsonMatch) {
-      /** 파싱 실패 시 RRF 폴백 */
-      const fallbackIds = candidates
+      /** 파싱 실패 시 RRF 폴백 (M11: 복사 후 정렬) */
+      const fallbackIds = [...candidates]
         .sort((a, b) => b.rrfScore - a.rrfScore)
         .slice(0, topK)
         .map((c) => c.id);

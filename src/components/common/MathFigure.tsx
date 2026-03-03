@@ -1,15 +1,27 @@
 import { useEffect, useRef, useId } from 'react';
 import type { FigureSpec, FigureElement } from '../../types';
 
-/** JSXGraph CSS를 한 번만 로드 */
+/** JSXGraph CSS를 한 번만 로드 (로컬 파일) */
 let cssLoaded = false;
 function loadJSXGraphCSS() {
   if (cssLoaded) return;
   cssLoaded = true;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = 'https://cdn.jsdelivr.net/npm/jsxgraph/distrib/jsxgraph.css';
+  link.href = '/jsxgraph.css';
   document.head.appendChild(link);
+}
+
+/** functiongraph fn 문자열 허용 토큰 검증 (C5: new Function() 보안) */
+const ALLOWED_FN_PATTERN = /^[\d\s+\-*/().^x,eE]+$|^[\d\s+\-*/().^x,eE]*(Math\.(sin|cos|tan|abs|sqrt|log|exp|PI|pow|floor|ceil|round|min|max)[\d\s+\-*/().^x,eE]*)+$/;
+
+function isSafeFnString(fn: string): boolean {
+  /** Math 함수명을 임시로 제거하고 남은 토큰이 안전한지 확인 */
+  const stripped = fn
+    .replace(/Math\.(sin|cos|tan|abs|sqrt|log|exp|PI|pow|floor|ceil|round|min|max)/g, '')
+    .replace(/\b(sin|cos|tan|abs|sqrt|log|exp|PI)\b/g, '');
+  /** 남은 토큰: 숫자, 연산자, x, 공백, 괄호, 콤마만 허용 */
+  return /^[\d\s+\-*/().^x,eE]*$/.test(stripped);
 }
 
 /** JSXGraph 도형/그래프 렌더러 */
@@ -69,12 +81,12 @@ export default function MathFigure({ spec, className }: { spec: FigureSpec; clas
 
     return () => {
       cancelled = true;
-      if (boardRef.current) {
+      /** H1: cleanup 시 현재 boardRef 캡처하여 레이스 컨디션 방지 */
+      const boardToFree = boardRef.current;
+      boardRef.current = null;
+      if (boardToFree) {
         void import('jsxgraph').then((JXG) => {
-          if (boardRef.current) {
-            JXG.JSXGraph.freeBoard(boardRef.current);
-            boardRef.current = null;
-          }
+          JXG.JSXGraph.freeBoard(boardToFree);
         });
       }
     };
@@ -84,8 +96,7 @@ export default function MathFigure({ spec, className }: { spec: FigureSpec; clas
     <div
       ref={containerRef}
       id={boardId}
-      className={`mx-auto ${className ?? ''}`}
-      style={{ width: 280, height: 280 }}
+      className={`mx-auto w-[280px] h-[280px] ${className ?? ''}`}
     />
   );
 }
@@ -195,6 +206,13 @@ function renderElement(
           .replace(/\bexp\b/g, 'Math.exp')
           .replace(/\bPI\b/g, 'Math.PI')
           .replace(/\^/g, '**');
+
+        /** C5: 허용 토큰 화이트리스트 검증 — 악의적 코드 실행 차단 */
+        if (!isSafeFnString(fnBody)) {
+          console.warn('MathFigure: 허용되지 않는 함수 문자열 차단:', el.fn);
+          break;
+        }
+
         const fn = new Function('x', `return ${fnBody}`) as (x: number) => number;
         board.create('functiongraph', [fn, range[0], range[1]], {
           strokeColor: '#2563eb',

@@ -1,8 +1,15 @@
 import { supabase } from '../config/supabase';
-import type { Problem, SolveLog } from '../types';
+import type { Problem, SolveLog, FigureSpec } from '../types';
 
 /** DB row를 Problem 타입으로 변환 */
 function toProblem(row: Record<string, unknown>): Problem {
+  /** figure가 있으면 FigureSpec으로 변환 */
+  const rawFigure = row.figure as Record<string, unknown> | null | undefined;
+  const figure: FigureSpec | undefined =
+    rawFigure && typeof rawFigure === 'object' && 'boundingBox' in rawFigure
+      ? (rawFigure as unknown as FigureSpec)
+      : undefined;
+
   return {
     id: row.id as string,
     content: row.content as string,
@@ -13,6 +20,7 @@ function toProblem(row: Record<string, unknown>): Problem {
     difficulty: row.difficulty as 'easy' | 'medium' | 'hard',
     choices: (row.choices as string[]) ?? [],
     source: 'ai-generated',
+    figure,
   };
 }
 
@@ -42,18 +50,27 @@ export async function generateProblems(
     difficulty: difficulty as 'easy' | 'medium' | 'hard',
     count,
   });
-  return results.map((p) => ({
-    id: p.id,
-    content: p.content,
-    answer: p.answer,
-    solution: p.solution,
-    grade: p.grade,
-    topic: p.topic,
-    difficulty: p.difficulty as 'easy' | 'medium' | 'hard',
-    choices: p.choices,
-    source: 'ai-generated' as const,
-    figure: p.figure as Problem['figure'],
-  }));
+  return results.map((p) => {
+    /** M7: 런타임 검증으로 figure 변환 */
+    const rawFig = p.figure;
+    const figure: FigureSpec | undefined =
+      rawFig && typeof rawFig === 'object' && 'boundingBox' in rawFig
+        ? (rawFig as unknown as FigureSpec)
+        : undefined;
+
+    return {
+      id: p.id,
+      content: p.content,
+      answer: p.answer,
+      solution: p.solution,
+      grade: p.grade,
+      topic: p.topic,
+      difficulty: p.difficulty as 'easy' | 'medium' | 'hard',
+      choices: p.choices,
+      source: 'ai-generated' as const,
+      figure,
+    };
+  });
 }
 
 /** 생성된 문제를 DB에 저장 */

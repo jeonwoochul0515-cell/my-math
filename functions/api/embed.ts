@@ -33,6 +33,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
+    /** M9: 배치 크기 128개 제한 (Voyage AI 권장 한도) */
+    if (texts.length > 128) {
+      return new Response(JSON.stringify({ error: '한 번에 최대 128개까지 임베딩할 수 있습니다.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const response = await fetch('https://api.voyageai.com/v1/embeddings', {
       method: 'POST',
       headers: {
