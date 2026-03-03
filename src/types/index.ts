@@ -123,6 +123,57 @@ export interface Payment {
   createdAt: Date;
 }
 
+/** 문제 배부 */
+export interface ProblemAssignment {
+  id: string;
+  studentId: string;
+  problemId: string;
+  assignedBy: string;
+  academyId: string;
+  status: 'pending' | 'submitted' | 'graded';
+  assignedAt: Date;
+  submittedAt: Date | null;
+}
+
+/** OCR 채점 결과 */
+export interface OCRResult {
+  id: string;
+  studentId: string;
+  problemId: string;
+  assignmentId: string | null;
+  recognizedAnswer: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  errorAnalysis: string | null;
+  weakTopics: string[];
+  confidence: number;
+  createdAt: Date;
+}
+
+/** 오답노트 항목 */
+export interface WrongAnswerNote {
+  id: string;
+  studentId: string;
+  problemId: string;
+  originalAnswer: string;
+  correctAnswer: string;
+  errorAnalysis: string | null;
+  retryCount: number;
+  isResolved: boolean;
+  createdAt: Date;
+}
+
+/** AI 분석 보고서 */
+export interface AIReport {
+  id: string;
+  studentId: string;
+  reportType: 'weakness' | 'parent_analysis' | 'guidance_plan';
+  content: string;
+  data: Record<string, unknown>;
+  validUntil: Date | null;
+  createdAt: Date;
+}
+
 /** 내비게이션 메뉴 아이템 */
 export interface NavItem {
   label: string;

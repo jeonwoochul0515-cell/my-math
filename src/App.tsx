@@ -8,16 +8,21 @@ import AIGeneration from './components/owner/AIGeneration';
 import OwnerSettings from './components/owner/Settings';
 import OwnerLayout from './components/owner/OwnerLayout';
 import StudentManagement from './components/owner/StudentManagement';
+import StudentResults from './components/owner/StudentResults';
 import StudentLayout from './components/student/StudentLayout';
 import StudentHome from './components/student/StudentHome';
 import ProblemSolving from './components/student/ProblemSolving';
 import GradeCheck from './components/student/GradeCheck';
 import StudentProfile from './components/student/StudentProfile';
+import AssignedProblemSolving from './components/student/AssignedProblemSolving';
+import WrongAnswerNotebook from './components/student/WrongAnswerNotebook';
+import StudentFeedback from './components/student/StudentFeedback';
 import ParentLayout from './components/parent/ParentLayout';
 import ParentHome from './components/parent/ParentHome';
 import ChildGrades from './components/parent/ChildGrades';
 import AttendanceCheck from './components/parent/AttendanceCheck';
 import NotificationList from './components/parent/NotificationList';
+import ExpertAnalysis from './components/parent/ExpertAnalysis';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminDashboard from './components/admin/AdminDashboard';
 import AcademyList from './components/admin/AcademyList';
@@ -109,14 +114,18 @@ const ownerNavItems: NavItem[] = [
   { label: '반 관리', path: '/owner/classes', icon: 'UsersRound' },
   { label: '학생관리', path: '/owner/students', icon: 'GraduationCap' },
   { label: 'AI 출제', path: '/owner/ai-generate', icon: 'Sparkles' },
+  { label: '채점 결과', path: '/owner/results', icon: 'ClipboardList' },
   { label: '설정', path: '/owner/settings', icon: 'Settings' },
 ];
 
-/** 학생 네비게이션 */
+/** 학생 네비게이션 (모바일 하단탭은 상위 5개만 표시) */
 const studentNavItems: NavItem[] = [
   { label: '홈', path: '/student', icon: 'Home' },
   { label: '문제풀기', path: '/student/solve', icon: 'PenTool' },
+  { label: '오답노트', path: '/student/wrong-notes', icon: 'BookX' },
+  { label: '피드백', path: '/student/feedback', icon: 'MessageSquare' },
   { label: '성적확인', path: '/student/grades', icon: 'BarChart3' },
+  { label: '배부문제', path: '/student/assigned', icon: 'ClipboardList' },
   { label: '내 정보', path: '/student/profile', icon: 'UserCircle' },
 ];
 
@@ -124,6 +133,7 @@ const studentNavItems: NavItem[] = [
 const parentNavItems: NavItem[] = [
   { label: '홈', path: '/parent', icon: 'Home' },
   { label: '자녀 성적', path: '/parent/grades', icon: 'BarChart3' },
+  { label: '전문가 분석', path: '/parent/analysis', icon: 'BrainCircuit' },
   { label: '출결 확인', path: '/parent/attendance', icon: 'CalendarCheck' },
   { label: '알림', path: '/parent/notifications', icon: 'Bell' },
 ];
@@ -154,6 +164,7 @@ function AppRoutes() {
           <Route path="classes" element={<ClassManagement />} />
           <Route path="students" element={<StudentManagement />} />
           <Route path="ai-generate" element={<AIGeneration />} />
+          <Route path="results" element={<StudentResults />} />
           <Route path="settings" element={<OwnerSettings />} />
         </Route>
       </Route>
@@ -168,6 +179,9 @@ function AppRoutes() {
         <Route element={<StudentLayout />}>
           <Route index element={<StudentHome />} />
           <Route path="solve" element={<ProblemSolving />} />
+          <Route path="assigned" element={<AssignedProblemSolving />} />
+          <Route path="wrong-notes" element={<WrongAnswerNotebook />} />
+          <Route path="feedback" element={<StudentFeedback />} />
           <Route path="grades" element={<GradeCheck />} />
           <Route path="profile" element={<StudentProfile />} />
         </Route>
@@ -183,6 +197,7 @@ function AppRoutes() {
         <Route element={<ParentLayout />}>
           <Route index element={<ParentHome />} />
           <Route path="grades" element={<ChildGrades />} />
+          <Route path="analysis" element={<ExpertAnalysis />} />
           <Route path="attendance" element={<AttendanceCheck />} />
           <Route path="notifications" element={<NotificationList />} />
         </Route>
