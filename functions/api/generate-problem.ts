@@ -7,6 +7,7 @@ interface Env {
 interface RequestBody {
   grade: string;
   topic: string;
+  subTopic?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   count: number;
   referenceProblems?: { content: string; answer: string; solution: string }[];
@@ -120,6 +121,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       ? `\n\n2022 개정 교육과정 성취기준 (반드시 이 범위 내에서 출제하세요):\n${curriculumContext}`
       : '';
 
+    /** 세부 성취기준 블록 (subTopic이 있으면 추가) */
+    const subTopicBlock = body.subTopic
+      ? `\n## 세부 성취기준\n이 문제는 다음 성취기준 범위에서 출제합니다:\n${body.subTopic}\n해당 성취기준의 핵심 개념과 학습 목표에 맞는 문제를 생성하세요.\n`
+      : '';
+
     /** 도형/그래프가 필요한 단원인지 판별 */
     const FIGURE_TOPICS = [
       /** 초등 도형/측정 */
@@ -179,7 +185,7 @@ figure는 다음 JSON 형식입니다:
 - 학년: ${grade}
 - 단원: ${topic}
 - 난이도: ${difficultyMap[difficulty] ?? difficulty}
-${curriculumBlock}
+${curriculumBlock}${subTopicBlock}
 ${refText}
 
 문제 생성 절차 (반드시 이 순서를 따르세요):

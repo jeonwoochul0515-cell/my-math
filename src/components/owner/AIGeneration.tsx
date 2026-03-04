@@ -7,27 +7,10 @@ import { lazy, Suspense } from 'react';
 import Loading from '../common/Loading';
 import MathText from '../common/MathText';
 import type { Problem } from '../../types';
+import { getGroupedTopics, getAllGrades, getStandardsForTopic, getTopicsFlat } from '../../data/curriculum2022';
 
 /** JSXGraph 컴포넌트는 무겁기 때문에 lazy load */
 const MathFigure = lazy(() => import('../common/MathFigure'));
-
-/** 학년-단원 매핑 (2022 개정 교육과정 기준) */
-const CURRICULUM: Record<string, string[]> = {
-  초1: ['9까지의 수', '덧셈과 뺄셈(1)', '50까지의 수', '덧셈과 뺄셈(2)', '여러 가지 모양', '비교하기', '시계 보기'],
-  초2: ['세 자리 수', '덧셈과 뺄셈', '곱셈', '길이 재기', '분류하기', '곱셈구구', '시각과 시간', '규칙 찾기'],
-  초3: ['덧셈과 뺄셈', '평면도형', '나눗셈', '곱셈', '길이와 시간', '분수와 소수', '들이와 무게', '자료의 정리'],
-  초4: ['큰 수', '각도', '곱셈과 나눗셈', '평면도형의 이동', '막대그래프', '규칙 찾기', '분수의 덧셈과 뺄셈', '소수의 덧셈과 뺄셈', '사각형', '다각형', '꺾은선그래프'],
-  초5: ['자연수의 혼합 계산', '약수와 배수', '규칙과 대응', '약분과 통분', '분수의 덧셈과 뺄셈', '다각형의 둘레와 넓이', '수의 범위와 어림하기', '분수의 곱셈', '합동과 대칭', '소수의 곱셈', '평균과 가능성'],
-  초6: ['분수의 나눗셈', '각기둥과 각뿔', '소수의 나눗셈', '비와 비율', '여러 가지 그래프', '직육면체의 부피와 겉넓이', '비례식과 비례배분', '원의 넓이', '원기둥·원뿔·구', '비율 그래프', '경우의 수'],
-  중1: ['소인수분해', '정수와 유리수', '문자와 식', '일차방정식', '좌표평면과 그래프', '정비례와 반비례', '기본 도형', '작도와 합동', '평면도형의 성질', '입체도형의 성질', '자료의 정리와 해석'],
-  중2: ['유리수와 순환소수', '식의 계산', '일차부등식', '연립방정식', '일차함수', '삼각형의 성질', '사각형의 성질', '도형의 닮음', '확률'],
-  중3: ['제곱근과 실수', '다항식의 곱셈과 인수분해', '이차방정식', '이차함수', '삼각비', '원의 성질', '대푯값과 산포도', '상관관계'],
-  공통수학1: ['다항식', '방정식과 부등식', '도형의 방정식'],
-  공통수학2: ['집합과 명제', '함수', '경우의 수'],
-  대수: ['지수와 로그', '수열'],
-  미적분I: ['삼각함수', '함수의 극한과 연속', '미분', '적분'],
-  '확률과 통계': ['순열과 조합', '확률', '통계'],
-};
 
 /** 난이도 옵션 */
 const DIFFICULTIES = [
@@ -39,7 +22,7 @@ const DIFFICULTIES = [
 const DIFFICULTY_LABEL: Record<string, string> = { easy: '쉬움', medium: '보통', hard: '어려움' };
 
 /** 학년 목록 */
-const GRADES = Object.keys(CURRICULUM);
+const GRADES = getAllGrades();
 
 /** 오늘 날짜 (YYYY.MM.DD) */
 function todayString(): string {
@@ -54,22 +37,30 @@ export default function AIGeneration() {
   const { generating, error, generate } = useProblems(academy?.id ?? null);
 
   const [grade, setGrade] = useState(GRADES[0]);
-  const [topic, setTopic] = useState(CURRICULUM[GRADES[0]][0]);
+  const [topic, setTopic] = useState(getTopicsFlat(GRADES[0])[0]);
   const [difficulty, setDifficulty] = useState<string>('medium');
   const [count, setCount] = useState(5);
   const [generatedProblems, setGeneratedProblems] = useState<Problem[]>([]);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [selectedStandards, setSelectedStandards] = useState<string[]>([]);
 
-  /** 학년 변경 시 단원을 첫 번째로 초기화 */
+  /** 학년 변경 시 단원과 성취기준을 초기화 */
   const handleGradeChange = (newGrade: string) => {
     setGrade(newGrade);
-    setTopic(CURRICULUM[newGrade][0]);
+    setTopic(getTopicsFlat(newGrade)[0]);
+    setSelectedStandards([]);
   };
 
-  /** 문제 생성 실행 */
+  /** 문제 생성 실행 — 선택된 성취기준을 subTopic으로 전달 */
   const handleGenerate = async () => {
     setShowAnswers(false);
-    const results = await generate(grade, topic, difficulty, count);
+    const subTopic = selectedStandards.length > 0
+      ? selectedStandards.map(code => {
+          const std = getStandardsForTopic(grade, topic).find(s => s.code === code);
+          return std ? `${std.code} ${std.description}` : code;
+        }).join('; ')
+      : undefined;
+    const results = await generate(grade, topic, difficulty, count, subTopic);
     if (results.length > 0) {
       setGeneratedProblems(results);
     }
@@ -122,13 +113,50 @@ export default function AIGeneration() {
           </select>
         </div>
 
-        {/* 단원 선택 */}
+        {/* 단원 선택 (대단원별 optgroup) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">단원</label>
-          <select value={topic} onChange={(e) => setTopic(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            {CURRICULUM[grade].map((t) => <option key={t} value={t}>{t}</option>)}
+          <select
+            value={topic}
+            onChange={e => { setTopic(e.target.value); setSelectedStandards([]); }}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">단원 선택</option>
+            {getGroupedTopics(grade, academy?.textbookPublisher).map(g => (
+              <optgroup key={g.major} label={g.major}>
+                {g.topics.map(t => <option key={t} value={t}>{t}</option>)}
+              </optgroup>
+            ))}
           </select>
+
+          {/* 성취기준 선택 체크박스 */}
+          {topic && getStandardsForTopic(grade, topic).length > 0 && (
+            <div className="mt-3 max-h-48 overflow-y-auto rounded-lg border bg-gray-50 p-3">
+              <p className="mb-2 text-xs font-medium text-gray-500">성취기준 선택 (선택사항 — 미선택 시 전체 범위)</p>
+              <div className="space-y-1.5">
+                {getStandardsForTopic(grade, topic).map(s => (
+                  <label key={s.code} className="flex items-start gap-2 text-sm cursor-pointer hover:bg-white rounded px-1 py-0.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedStandards.includes(s.code)}
+                      onChange={e => {
+                        setSelectedStandards(prev =>
+                          e.target.checked
+                            ? [...prev, s.code]
+                            : prev.filter(c => c !== s.code)
+                        );
+                      }}
+                      className="mt-0.5 rounded border-gray-300"
+                    />
+                    <span>
+                      <span className="font-mono text-xs text-blue-600">{s.code}</span>{' '}
+                      <span className="text-gray-700">{s.description}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 난이도 선택 */}

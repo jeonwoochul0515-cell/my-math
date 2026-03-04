@@ -17,6 +17,7 @@ function toProblem(row: Record<string, unknown>): Problem {
     solution: (row.solution as string) ?? '',
     grade: row.grade as string,
     topic: row.topic as string,
+    subTopic: (row.sub_topic as string) ?? undefined,
     difficulty: row.difficulty as 'easy' | 'medium' | 'hard',
     choices: (row.choices as string[]) ?? [],
     source: 'ai-generated',
@@ -41,12 +42,14 @@ export async function generateProblems(
   grade: string,
   topic: string,
   difficulty: string,
-  count: number
+  count: number,
+  subTopic?: string
 ): Promise<Problem[]> {
   const { generateProblemsWithRAG } = await import('./ai');
   const results = await generateProblemsWithRAG({
     grade,
     topic,
+    subTopic,
     difficulty: difficulty as 'easy' | 'medium' | 'hard',
     count,
   });
@@ -65,6 +68,7 @@ export async function generateProblems(
       solution: p.solution,
       grade: p.grade,
       topic: p.topic,
+      subTopic: p.subTopic,
       difficulty: p.difficulty as 'easy' | 'medium' | 'hard',
       choices: p.choices,
       source: 'ai-generated' as const,
@@ -86,6 +90,7 @@ export async function saveProblem(
       solution: problem.solution,
       grade: problem.grade,
       topic: problem.topic,
+      sub_topic: problem.subTopic ?? null,
       difficulty: problem.difficulty,
       choices: problem.choices,
       academy_id: academyId,

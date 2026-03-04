@@ -121,6 +121,9 @@ export default function AssignedProblemSolving() {
       {/* 문제 번호 */}
       <div className="flex items-center justify-between">
         <span className="rounded-full bg-indigo-100 px-3 py-1 text-sm font-bold text-indigo-700">{problem.topic}</span>
+        {problem.subTopic && (
+          <span className="ml-1 text-xs text-gray-400">{problem.subTopic}</span>
+        )}
         <span className="text-sm font-medium text-gray-400">{currentIdx + 1}/{problems.length}</span>
       </div>
       {/* 문제 내용 */}

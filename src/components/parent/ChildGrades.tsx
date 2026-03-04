@@ -140,7 +140,10 @@ export default function ChildGrades() {
               <tbody>
                 {reports.map((r) => (
                   <tr key={r.topic} className="border-b border-gray-100">
-                    <td className="py-3 font-medium text-gray-900">{r.topic}</td>
+                    <td className="py-3 font-medium text-gray-900">
+                      {r.topic}
+                      {r.subTopic && <div className="text-xs font-normal text-gray-400">{r.subTopic}</div>}
+                    </td>
                     <td className="py-3 text-center">
                       <span className={`font-semibold ${getAccuracyColor(r.accuracy)}`}>
                         {r.accuracy}%

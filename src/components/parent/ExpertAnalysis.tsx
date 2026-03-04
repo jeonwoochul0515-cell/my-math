@@ -147,7 +147,10 @@ export default function ExpertAnalysis() {
           <div className="space-y-3">
             {reports.map((r) => (
               <div key={r.topic} className="flex items-center gap-3">
-                <span className="w-28 shrink-0 truncate text-sm text-gray-700">{r.topic}</span>
+                <div className="w-32 shrink-0">
+                  <span className="truncate text-sm text-gray-700">{r.topic}</span>
+                  {r.subTopic && <div className="truncate text-xs text-gray-400">{r.subTopic}</div>}
+                </div>
                 <div className="h-2.5 flex-1 rounded-full bg-gray-100">
                   <div
                     className={`h-2.5 rounded-full ${getBarColor(r.accuracy)}`}

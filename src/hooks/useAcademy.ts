@@ -45,7 +45,7 @@ export function useAcademy(ownerId: string | null) {
 
   /** 학원 정보 수정 */
   const update = useCallback(
-    async (updates: { name?: string }) => {
+    async (updates: { name?: string; textbookPublisher?: string }) => {
       if (!academy) return;
       try {
         await updateAcademy(academy.id, updates);

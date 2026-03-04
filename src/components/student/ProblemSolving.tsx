@@ -106,6 +106,9 @@ export default function ProblemSolving() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <span className="rounded-full bg-indigo-100 px-3 py-1 font-medium text-indigo-700">{problem.topic}</span>
+          {problem.subTopic && (
+            <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{problem.subTopic}</span>
+          )}
           <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
             {problem.difficulty === 'easy' ? '쉬움' : problem.difficulty === 'medium' ? '보통' : '어려움'}
           </span>

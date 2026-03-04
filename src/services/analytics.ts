@@ -1,16 +1,19 @@
 import { supabase } from '../config/supabase';
 import type { SolveLog, WeaknessReport } from '../types';
 
-/** 단원별 약점 분석 */
+/** 단원별 약점 분석 (subTopicMap이 있으면 세부 성취기준도 포함) */
 export function analyzeWeakness(
   solveLogs: SolveLog[],
-  topicMap: Map<string, string>
+  topicMap: Map<string, string>,
+  subTopicMap?: Map<string, string>
 ): WeaknessReport[] {
   /** 단원별 통계를 누적할 맵 */
   const topicStats = new Map<
     string,
     { total: number; correct: number }
   >();
+  /** 단원별 subTopic 빈도 추적 (가장 빈번한 subTopic을 대표값으로 사용) */
+  const topicSubTopicCount = new Map<string, Map<string, number>>();
 
   for (const log of solveLogs) {
     const topic = topicMap.get(log.problemId) ?? '기타';
@@ -18,6 +21,16 @@ export function analyzeWeakness(
     stats.total += 1;
     if (log.isCorrect) stats.correct += 1;
     topicStats.set(topic, stats);
+
+    /** subTopic 빈도 집계 */
+    if (subTopicMap) {
+      const st = subTopicMap.get(log.problemId);
+      if (st) {
+        const countMap = topicSubTopicCount.get(topic) ?? new Map<string, number>();
+        countMap.set(st, (countMap.get(st) ?? 0) + 1);
+        topicSubTopicCount.set(topic, countMap);
+      }
+    }
   }
 
   /** 분석 결과 배열 생성 */
@@ -33,8 +46,22 @@ export function analyzeWeakness(
       recommendation = '잘하고 있습니다! 심화 문제에 도전해보세요.';
     }
 
+    /** 해당 단원에서 가장 빈번한 subTopic을 대표값으로 선택 */
+    let subTopic: string | undefined;
+    const subTopicCounts = topicSubTopicCount.get(topic);
+    if (subTopicCounts && subTopicCounts.size > 0) {
+      let maxCount = 0;
+      for (const [st, cnt] of subTopicCounts) {
+        if (cnt > maxCount) {
+          maxCount = cnt;
+          subTopic = st;
+        }
+      }
+    }
+
     reports.push({
       topic,
+      subTopic,
       accuracy,
       totalProblems: stats.total,
       correctCount: stats.correct,
@@ -80,19 +107,24 @@ export async function getDetailedWeaknessReport(studentId: string): Promise<{
   const problemIds = [...new Set(solveLogs.map((l) => l.problemId))];
   const { data: problemData, error: problemError } = await supabase
     .from('generated_problems')
-    .select('id, topic')
+    .select('id, topic, sub_topic')
     .in('id', problemIds);
   if (problemError)
     throw new Error('문제 정보를 불러오지 못했습니다: ' + problemError.message);
 
   const topicMap = new Map<string, string>();
+  /** 세부 성취기준 매핑 (subTopic) */
+  const subTopicMap = new Map<string, string>();
   for (const row of problemData ?? []) {
     const r = row as Record<string, unknown>;
     topicMap.set(r.id as string, r.topic as string);
+    if (r.sub_topic) {
+      subTopicMap.set(r.id as string, r.sub_topic as string);
+    }
   }
 
-  /** 3. 기존 analyzeWeakness 호출 */
-  const reports = analyzeWeakness(solveLogs, topicMap);
+  /** 3. 기존 analyzeWeakness 호출 (subTopicMap 포함) */
+  const reports = analyzeWeakness(solveLogs, topicMap, subTopicMap);
 
   /** 4. ai_reports 테이블에서 캐시된 보고서 확인 */
   const { data: cachedReport, error: cacheError } = await supabase

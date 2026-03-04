@@ -3,6 +3,7 @@ import { Save, Plus, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import Loading from '../common/Loading';
+import { SUPPORTED_PUBLISHERS } from '../../data/curriculum2022';
 
 /** 설정 페이지 - 학원 정보 수정 및 서비스 정보 */
 export default function OwnerSettings() {
@@ -138,6 +139,24 @@ export default function OwnerSettings() {
               <span className="text-sm font-medium text-green-600">저장되었습니다.</span>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* 교과서 설정 */}
+      <div className="rounded-xl border bg-white p-6">
+        <h3 className="mb-4 text-lg font-bold text-gray-900">교과서 설정</h3>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">사용 교과서 출판사</label>
+          <select
+            value={academy?.textbookPublisher ?? '교육과정 순서'}
+            onChange={e => update({ textbookPublisher: e.target.value })}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          >
+            {SUPPORTED_PUBLISHERS.map(p => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-400">AI 출제 화면에서 단원 표시 순서가 변경됩니다.</p>
         </div>
       </div>
 

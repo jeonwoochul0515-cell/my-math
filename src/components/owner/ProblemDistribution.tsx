@@ -249,6 +249,7 @@ function ProblemRow({ problem, index }: { problem: Problem; index: number }) {
         </p>
         <div className="mt-1 flex items-center gap-1.5">
           <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-700">{problem.topic}</span>
+          {problem.subTopic && <span className="text-xs text-gray-400"> &middot; {problem.subTopic}</span>}
           <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
             {DIFFICULTY_LABEL[problem.difficulty] ?? problem.difficulty}
           </span>

@@ -131,6 +131,7 @@ export default function StudentFeedback() {
             <div key={w.topic} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <p className="font-bold text-gray-900">{w.topic}</p>
+                {w.subTopic && <p className="text-xs text-gray-500">{w.subTopic}</p>}
                 <span className={`text-sm font-bold ${accuracyColor(w.accuracy)}`}>{w.accuracy}%</span>
               </div>
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">

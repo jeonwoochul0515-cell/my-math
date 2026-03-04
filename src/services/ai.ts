@@ -47,6 +47,7 @@ export interface GeneratedProblem {
   choices: string[];
   grade: string;
   topic: string;
+  subTopic?: string;
   difficulty: string;
   figure?: FigureSpec;
 }
@@ -55,6 +56,7 @@ export interface GeneratedProblem {
 export interface GenerateParams {
   grade: string;
   topic: string;
+  subTopic?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   count: number;
 }
@@ -320,6 +322,7 @@ export async function searchProblemsHybrid(
  * @param topic - 단원
  * @param difficulty - 난이도
  * @param topK - 선택할 문제 수 (기본 5)
+ * @param subTopic - 세부 성취기준 (선택)
  * @returns 리랭킹된 문제 배열
  */
 async function rerankWithClaude(
@@ -327,7 +330,8 @@ async function rerankWithClaude(
   grade: string,
   topic: string,
   difficulty: string,
-  topK: number = 5
+  topK: number = 5,
+  subTopic?: string
 ): Promise<HybridSearchResult[]> {
   /** 후보가 topK 이하면 리랭킹 불필요 */
   if (candidates.length <= topK) {
@@ -348,6 +352,7 @@ async function rerankWithClaude(
         })),
         grade,
         topic,
+        ...(subTopic ? { subTopic } : {}),
         difficulty,
         topK,
       }),
@@ -399,11 +404,13 @@ async function rerankWithClaude(
 export async function generateProblemsWithRAG(
   params: GenerateParams
 ): Promise<GeneratedProblem[]> {
-  const { grade, topic, difficulty, count } = params;
+  const { grade, topic, subTopic, difficulty, count } = params;
 
   try {
-    /** 1단계: 쿼리 구성 및 임베딩 생성 */
-    const vectorQuery = `${grade} ${topic} ${difficulty} 수학 문제`;
+    /** 1단계: 쿼리 구성 및 임베딩 생성 (세부 성취기준이 있으면 포함) */
+    const vectorQuery = subTopic
+      ? `${grade} ${topic} ${subTopic} ${difficulty} 수학 문제`
+      : `${grade} ${topic} ${difficulty} 수학 문제`;
     const fulltextQuery = topic; // 풀텍스트는 단원명 중심
     const queryEmbedding = await getEmbedding(vectorQuery);
 
@@ -448,7 +455,7 @@ export async function generateProblemsWithRAG(
     /** 3단계: Claude 리랭킹 (후보가 5개 초과 시) */
     let topResults: HybridSearchResult[];
     if (searchResults.length > 5) {
-      topResults = await rerankWithClaude(searchResults, grade, topic, difficulty, 5);
+      topResults = await rerankWithClaude(searchResults, grade, topic, difficulty, 5, subTopic);
     } else {
       topResults = searchResults.slice(0, 5);
     }
@@ -496,6 +503,7 @@ export async function generateProblemsWithRAG(
       body: JSON.stringify({
         grade,
         topic,
+        ...(subTopic ? { subTopic } : {}),
         difficulty,
         count,
         referenceProblems,
@@ -540,6 +548,7 @@ export async function generateProblemsWithRAG(
           solution: problem.solution ?? '',
           grade,
           topic,
+          sub_topic: subTopic ?? null,
           difficulty,
           choices: problem.choices ?? [],
           source_refs: sourceRefs.length > 0 ? sourceRefs : null,
@@ -558,6 +567,7 @@ export async function generateProblemsWithRAG(
           choices: problem.choices ?? [],
           grade,
           topic,
+          subTopic,
           difficulty,
           figure: problem.figure,
         });
@@ -573,6 +583,7 @@ export async function generateProblemsWithRAG(
         choices: (row.choices as string[]) ?? [],
         grade: row.grade as string,
         topic: row.topic as string,
+        subTopic,
         difficulty: row.difficulty as string,
         figure: problem.figure,
       });

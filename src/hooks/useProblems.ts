@@ -38,13 +38,14 @@ export function useProblems(academyId: string | null) {
     [academyId]
   );
 
-  /** AI 문제 생성 */
+  /** AI 문제 생성 (세부 성취기준 선택 가능) */
   const generate = useCallback(
     async (
       grade: string,
       topic: string,
       difficulty: string,
-      count: number
+      count: number,
+      subTopic?: string
     ) => {
       setGenerating(true);
       try {
@@ -53,7 +54,8 @@ export function useProblems(academyId: string | null) {
           grade,
           topic,
           difficulty,
-          count
+          count,
+          subTopic
         );
         setProblems((prev) => [...generated, ...prev]);
         return generated;

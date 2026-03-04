@@ -8,6 +8,7 @@ export interface Academy {
   ownerId: string;
   ownerPhone?: string;
   address?: string;
+  textbookPublisher?: string;
   createdAt: Date;
 }
 
@@ -70,6 +71,7 @@ export interface Problem {
   solution: string;
   grade: string;
   topic: string;
+  subTopic?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   choices: string[];
   source: 'aihub' | 'ai-generated' | 'manual';
@@ -84,6 +86,9 @@ export interface SolveLog {
   answer: string;
   isCorrect: boolean;
   solvedAt: Date;
+  assignmentId?: string;
+  errorAnalysis?: string;
+  weakTopics?: string[];
 }
 
 /** 알림 */
@@ -100,6 +105,8 @@ export interface Notification {
 /** 약점 분석 리포트 */
 export interface WeaknessReport {
   topic: string;
+  subTopic?: string;
+  majorChapter?: string;
   accuracy: number;
   totalProblems: number;
   correctCount: number;
