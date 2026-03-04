@@ -32,7 +32,8 @@ dist-ssr
 .wrangler/
 
 # Data / notebooks (대용량 AIHub 데이터 등)
-data/
+/data/
+!src/data/
 notebooks/
 dataqna
 *.zip
