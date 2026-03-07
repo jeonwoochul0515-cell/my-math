@@ -92,11 +92,11 @@ export default function ExpertAnalysis() {
 
   return (
     <div className="space-y-6">
-      {/* 헤더 + 자녀 선택 */}
-      <div className="flex items-center justify-between">
-        <div>
+      {/* 헤더 + 자녀 선택 — 모바일에서 세로 배치 */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-xl font-bold text-gray-900">전문가 학습 분석</h2>
-          <p className="mt-1 text-sm text-gray-500">{selectedChild.name} 학생의 AI 학습 분석 리포트</p>
+          <p className="mt-1 text-sm text-gray-500 truncate">{selectedChild.name} 학생의 AI 학습 분석 리포트</p>
         </div>
         {children.length > 1 && (
           <select
@@ -105,7 +105,7 @@ export default function ExpertAnalysis() {
               const c = children.find((ch) => ch.id === e.target.value);
               if (c) setSelectedChild(c);
             }}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm"
           >
             {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
@@ -128,7 +128,7 @@ export default function ExpertAnalysis() {
 
         {loading || generating ? (
           <div className="flex flex-col items-center gap-3 py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
             <p className="text-sm text-gray-500">AI가 학습 데이터를 분석하고 있습니다...</p>
           </div>
         ) : errorMsg ? (
@@ -146,9 +146,9 @@ export default function ExpertAnalysis() {
           <h3 className="mb-4 font-semibold text-gray-900">단원별 정답률</h3>
           <div className="space-y-3">
             {reports.map((r) => (
-              <div key={r.topic} className="flex items-center gap-3">
-                <div className="w-32 shrink-0">
-                  <span className="truncate text-sm text-gray-700">{r.topic}</span>
+              <div key={r.topic} className="flex items-center gap-2 sm:gap-3">
+                <div className="w-20 shrink-0 sm:w-32">
+                  <span className="block truncate text-sm text-gray-700">{r.topic}</span>
                   {r.subTopic && <div className="truncate text-xs text-gray-400">{r.subTopic}</div>}
                 </div>
                 <div className="h-2.5 flex-1 rounded-full bg-gray-100">
@@ -157,7 +157,7 @@ export default function ExpertAnalysis() {
                     style={{ width: `${String(r.accuracy)}%` }}
                   />
                 </div>
-                <span className="w-12 text-right text-sm font-medium text-gray-600">{r.accuracy}%</span>
+                <span className="w-10 text-right text-sm font-medium text-gray-600 sm:w-12">{r.accuracy}%</span>
               </div>
             ))}
           </div>

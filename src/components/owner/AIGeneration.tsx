@@ -198,8 +198,8 @@ export default function AIGeneration() {
       {/* ========== 생성된 문제 영역 ========== */}
       {hasProblems && (
         <div className="rounded-xl bg-white p-5 shadow-sm print:shadow-none print:p-0 print:rounded-none">
-          {/* 화면 전용: 툴바 */}
-          <div className="mb-5 flex items-center justify-between print:hidden">
+          {/* 화면 전용: 툴바 — 모바일에서 세로 배치 */}
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <span className="text-sm font-medium text-gray-700">
@@ -208,7 +208,7 @@ export default function AIGeneration() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => setShowAnswers((v) => !v)}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors sm:flex-none ${
                   showAnswers
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -217,7 +217,7 @@ export default function AIGeneration() {
                 {showAnswers ? '정답 숨기기' : '정답 보기'}
               </button>
               <button onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors sm:flex-none">
                 <Printer className="h-4 w-4" />
                 프린트
               </button>
@@ -275,9 +275,9 @@ function ProblemCard({ problem, index, showAnswer }: { problem: Problem; index: 
         </div>
       </div>
 
-      {/* 보기 */}
+      {/* 보기 — 모바일 1열, PC 2열 */}
       {problem.choices.length > 0 && (
-        <div className="ml-8 grid grid-cols-2 gap-x-4 gap-y-1.5">
+        <div className="ml-8 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
           {problem.choices.map((c, i) => (
             <div key={CIRCLE_NUMS[i] ?? String(i + 1)} className="flex items-baseline gap-1.5 text-sm text-gray-700">
               <span className="shrink-0">{CIRCLE_NUMS[i] ?? String(i + 1)}</span>

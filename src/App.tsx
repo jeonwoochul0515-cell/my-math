@@ -17,7 +17,7 @@ import StudentProfile from './components/student/StudentProfile';
 import AssignedProblemSolving from './components/student/AssignedProblemSolving';
 import WrongAnswerNotebook from './components/student/WrongAnswerNotebook';
 import StudentFeedback from './components/student/StudentFeedback';
-import ParentLayout from './components/parent/ParentLayout';
+import ParentAppLayout from './components/parent/ParentAppLayout';
 import ParentHome from './components/parent/ParentHome';
 import ChildGrades from './components/parent/ChildGrades';
 import AttendanceCheck from './components/parent/AttendanceCheck';
@@ -129,14 +129,7 @@ const studentNavItems: NavItem[] = [
   { label: '내 정보', path: '/student/profile', icon: 'UserCircle' },
 ];
 
-/** 학부모 네비게이션 */
-const parentNavItems: NavItem[] = [
-  { label: '홈', path: '/parent', icon: 'Home' },
-  { label: '자녀 성적', path: '/parent/grades', icon: 'BarChart3' },
-  { label: '전문가 분석', path: '/parent/analysis', icon: 'BrainCircuit' },
-  { label: '출결 확인', path: '/parent/attendance', icon: 'CalendarCheck' },
-  { label: '알림', path: '/parent/notifications', icon: 'Bell' },
-];
+/** 학부모 네비게이션 — ParentAppLayout 내부로 이동 */
 
 /** 관리자 네비게이션 */
 const adminNavItems: NavItem[] = [
@@ -187,20 +180,16 @@ function AppRoutes() {
         </Route>
       </Route>
 
-      {/* 학부모 라우트 */}
+      {/* 학부모 라우트 — ParentAppLayout이 컨텍스트 + 배지를 제공 */}
       <Route
         path="/parent"
-        element={
-          <AppLayout role="parent" title="마이매쓰 학부모" navItems={parentNavItems} />
-        }
+        element={<ParentAppLayout />}
       >
-        <Route element={<ParentLayout />}>
-          <Route index element={<ParentHome />} />
-          <Route path="grades" element={<ChildGrades />} />
-          <Route path="analysis" element={<ExpertAnalysis />} />
-          <Route path="attendance" element={<AttendanceCheck />} />
-          <Route path="notifications" element={<NotificationList />} />
-        </Route>
+        <Route index element={<ParentHome />} />
+        <Route path="grades" element={<ChildGrades />} />
+        <Route path="analysis" element={<ExpertAnalysis />} />
+        <Route path="attendance" element={<AttendanceCheck />} />
+        <Route path="notifications" element={<NotificationList />} />
       </Route>
 
       {/* 관리자 라우트 */}

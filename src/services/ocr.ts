@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import type { OCRResult } from '../types';
+import { notifyGradeResult } from './notifications';
 
 /** DB row를 OCRResult 타입으로 변환 */
 function toOCRResult(row: Record<string, unknown>): OCRResult {
@@ -121,6 +122,36 @@ export async function saveOCRResults(
     .insert(solveRows);
   if (solveError)
     throw new Error('풀이 기록 저장에 실패했습니다: ' + solveError.message);
+}
+
+/**
+ * OCR 결과 저장 + 학부모 성적 알림 생성
+ * saveOCRResults를 호출한 뒤 학부모에게 결과를 알린다.
+ *
+ * @param studentId - 학생 UUID
+ * @param studentName - 학생 이름 (알림 메시지용)
+ * @param parentId - 학부모 Firebase UID (없으면 빈 문자열)
+ * @param results - OCR 채점 결과
+ * @param assignmentId - 과제 ID (선택)
+ */
+export async function saveOCRResultsWithNotification(
+  studentId: string,
+  studentName: string,
+  parentId: string,
+  results: OCRResult[],
+  assignmentId?: string
+): Promise<void> {
+  await saveOCRResults(studentId, results, assignmentId);
+
+  /** 학부모 성적 알림 (비동기 — 실패해도 결과 반환) */
+  const correctCount = results.filter((r) => r.isCorrect).length;
+  notifyGradeResult(
+    studentId,
+    studentName,
+    parentId,
+    results.length,
+    correctCount
+  ).catch(() => { /* 알림 실패 무시 */ });
 }
 
 /** 학생의 OCR 결과 조회 */

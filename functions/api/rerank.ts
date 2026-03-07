@@ -33,7 +33,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   try {
     const body = (await context.request.json()) as RequestBody;
-    const { candidates, grade, topic, difficulty, topK } = body;
+    const { candidates, grade, topic, difficulty } = body;
+
+    /** topK 입력 검증 및 클램핑 (1~20) */
+    const topK = Math.max(1, Math.min(20, Math.floor(Number(body.topK) || 5)));
+
+    /** 필수 필드 검증 */
+    if (!grade || typeof grade !== 'string') {
+      return new Response(JSON.stringify({ error: '학년(grade)이 필요합니다.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (!topic || typeof topic !== 'string') {
+      return new Response(JSON.stringify({ error: '단원(topic)이 필요합니다.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!candidates?.length) {
       return new Response(JSON.stringify({ rankedIds: [] }), {

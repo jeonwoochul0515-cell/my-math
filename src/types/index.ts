@@ -74,7 +74,7 @@ export interface Problem {
   subTopic?: string;
   difficulty: 'easy' | 'medium' | 'hard';
   choices: string[];
-  source: 'aihub' | 'ai-generated' | 'manual';
+  source: 'aihub' | 'ai-generated' | 'manual' | 'japan-huggingface' | 'japan-ftext' | 'japan-aquarium';
   figure?: FigureSpec;
 }
 

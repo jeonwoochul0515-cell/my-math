@@ -109,7 +109,7 @@ export default function NotificationList() {
   return (
     <div className="space-y-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-gray-900">알림</h2>
           {unreadCount > 0 && (
@@ -121,7 +121,7 @@ export default function NotificationList() {
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllAsRead}
-            className="rounded-lg bg-purple-100 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-200 transition-colors"
+            className="rounded-lg bg-purple-100 px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-200 transition-colors"
           >
             모두 읽음 처리
           </button>

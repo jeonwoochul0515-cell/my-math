@@ -19,7 +19,7 @@ export default function Header({ title, role, userName, onMenuToggle, onLogout }
   };
 
   return (
-    <header className={`${bgMap[role]} px-4 py-3 text-white shadow-md`}>
+    <header className={`${bgMap[role]} sticky top-0 z-20 px-4 py-3 text-white shadow-md`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {onMenuToggle && (
@@ -27,10 +27,10 @@ export default function Header({ title, role, userName, onMenuToggle, onLogout }
               <Menu className="h-5 w-5" />
             </button>
           )}
-          <h1 className="text-lg font-bold">{title}</h1>
+          <h1 className="text-lg font-bold truncate">{title}</h1>
         </div>
-        <div className="flex items-center gap-3">
-          {userName && <span className="text-sm hidden sm:inline">{userName}</span>}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {userName && <span className="text-sm hidden sm:inline truncate max-w-[120px]">{userName}</span>}
           {onLogout && (
             <button onClick={onLogout} className="p-1.5 rounded-lg hover:bg-white/20" title="로그아웃">
               <LogOut className="h-4 w-4" />

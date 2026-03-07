@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import type { Problem, SolveLog, FigureSpec } from '../types';
+import { notifyGradeResult } from './notifications';
 
 /** DB row를 Problem 타입으로 변환 */
 function toProblem(row: Record<string, unknown>): Problem {
@@ -154,4 +155,36 @@ export async function getSolveLogs(studentId: string): Promise<SolveLog[]> {
   if (error)
     throw new Error('풀이 기록을 불러오지 못했습니다: ' + error.message);
   return (data ?? []).map(toSolveLog);
+}
+
+/**
+ * 배치 답안 제출 + 학부모 성적 알림 생성
+ * 여러 문제를 한꺼번에 제출한 뒤 학부모에게 결과를 알린다.
+ *
+ * @param studentId - 학생 UUID
+ * @param studentName - 학생 이름 (알림 메시지용)
+ * @param parentId - 학부모 Firebase UID
+ * @param answers - 답안 배열 (문제ID, 답, 정오답)
+ * @returns 저장된 풀이 기록 배열
+ */
+export async function submitAnswersWithNotification(
+  studentId: string,
+  studentName: string,
+  parentId: string,
+  answers: { problemId: string; answer: string; isCorrect: boolean }[]
+): Promise<SolveLog[]> {
+  /** 개별 답안 저장 */
+  const logs: SolveLog[] = [];
+  for (const a of answers) {
+    const log = await submitAnswer(studentId, a.problemId, a.answer, a.isCorrect);
+    logs.push(log);
+  }
+
+  /** 학부모 성적 알림 (비동기 — 실패해도 결과 반환) */
+  const correctCount = answers.filter((a) => a.isCorrect).length;
+  notifyGradeResult(studentId, studentName, parentId, answers.length, correctCount).catch(
+    () => { /* 알림 실패 무시 */ }
+  );
+
+  return logs;
 }

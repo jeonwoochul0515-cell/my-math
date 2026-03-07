@@ -123,7 +123,7 @@ export default function AttendanceCheck() {
             {recentLogs.map((log) => {
               const status = dayStatusMap.get(new Date(log.date).getDate()) ?? 'present';
               return (
-                <div key={log.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-sm">
+                <div key={log.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-gray-50 px-3 py-3 text-sm sm:flex-nowrap sm:justify-between sm:px-4">
                   <span className="font-medium text-gray-700">{log.date}</span>
                   <span className="text-gray-500">{formatTime(log.checkIn)} ~ {log.checkOut ? formatTime(log.checkOut) : '-'}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${

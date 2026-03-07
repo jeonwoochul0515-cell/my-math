@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase';
 import type { SolveLog, WeaknessReport } from '../types';
+import { notifyWeaknessDetected } from './notifications';
 
 /** 단원별 약점 분석 (subTopicMap이 있으면 세부 성취기준도 포함) */
 export function analyzeWeakness(
@@ -189,6 +190,34 @@ export async function getDetailedWeaknessReport(studentId: string): Promise<{
     /** AI 분석 실패 시 기본 보고서만 반환 */
     return { reports, aiAnalysis: null };
   }
+}
+
+/**
+ * 상세 약점 분석 + 약점 알림 전송
+ * getDetailedWeaknessReport를 호출하고, 정확도 60% 미만 단원이 있으면 학부모에게 알림을 보낸다.
+ *
+ * @param studentId - 학생 UUID
+ * @param studentName - 학생 이름 (알림 메시지용)
+ * @param parentId - 학부모 Firebase UID
+ */
+export async function getWeaknessReportWithNotification(
+  studentId: string,
+  studentName: string,
+  parentId: string
+): Promise<{ reports: WeaknessReport[]; aiAnalysis: string | null }> {
+  const result = await getDetailedWeaknessReport(studentId);
+
+  /** 정확도 60% 미만인 약점 단원 필터 */
+  const weakTopics = result.reports.filter((r) => r.accuracy < 60);
+
+  if (weakTopics.length > 0) {
+    /** 학부모 약점 알림 (비동기 — 실패해도 결과 반환) */
+    notifyWeaknessDetected(studentId, studentName, parentId, weakTopics).catch(
+      () => { /* 알림 실패 무시 */ }
+    );
+  }
+
+  return result;
 }
 
 /** 학생 결과 요약 (원장용) — 모든 학생의 요약 */

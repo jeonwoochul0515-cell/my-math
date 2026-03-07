@@ -599,7 +599,58 @@ export async function generateProblemsWithRAG(
 }
 
 // ---------------------------------------------------------------------------
-// 6. 약점 분석 함수
+// 6. 임베딩 상태 조회 함수
+// ---------------------------------------------------------------------------
+
+/** 임베딩 통계 결과 */
+export interface EmbeddingStats {
+  /** 전체 문제 수 */
+  total: number;
+  /** 임베딩이 있는 문제 수 */
+  embedded: number;
+  /** 임베딩이 없는 문제 수 */
+  unembedded: number;
+}
+
+/**
+ * problem_embeddings 테이블에서 임베딩 상태를 확인한다.
+ * 전체 문제 수, 임베딩 완료 수, 미완료 수를 반환한다.
+ */
+export async function getEmbeddingStats(): Promise<EmbeddingStats> {
+  try {
+    /** 전체 레코드 수 */
+    const { count: total, error: totalError } = await supabase
+      .from('problem_embeddings')
+      .select('id', { count: 'exact', head: true });
+    if (totalError)
+      throw new Error(`전체 문제 수 조회 실패: ${totalError.message}`);
+
+    /** 임베딩이 없는 레코드 수 */
+    const { count: unembedded, error: unembeddedError } = await supabase
+      .from('problem_embeddings')
+      .select('id', { count: 'exact', head: true })
+      .is('embedding', null);
+    if (unembeddedError)
+      throw new Error(`미임베딩 문제 수 조회 실패: ${unembeddedError.message}`);
+
+    const totalCount = total ?? 0;
+    const unembeddedCount = unembedded ?? 0;
+
+    return {
+      total: totalCount,
+      embedded: totalCount - unembeddedCount,
+      unembedded: unembeddedCount,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`임베딩 상태 조회 오류: ${error.message}`);
+    }
+    throw new Error('임베딩 상태 조회 중 알 수 없는 오류가 발생했습니다.');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. 약점 분석 함수
 // ---------------------------------------------------------------------------
 
 /** 단원별 통계를 집계하기 위한 내부 타입 */

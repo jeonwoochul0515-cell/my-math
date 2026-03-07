@@ -85,7 +85,7 @@ export default function ChildGrades() {
   /** 정답률에 따른 색상 */
   const getAccuracyColor = (acc: number): string => {
     if (acc >= 80) return 'text-green-600';
-    if (acc >= 70) return 'text-yellow-600';
+    if (acc >= 70) return 'text-amber-600';
     return 'text-red-600';
   };
 
@@ -109,17 +109,15 @@ export default function ChildGrades() {
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-gray-900">자녀 성적</h2>
 
-      {/* 전체 정답률 */}
-      <div className="flex flex-col items-center rounded-xl bg-white p-6 shadow-sm">
-        <p className="text-sm text-gray-500">전체 정답률</p>
+      {/* 전체 정답률 — 학부모 테마(purple) 적용 */}
+      <div className="flex flex-col items-center rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 p-6 text-white shadow-lg sm:p-8">
+        <p className="text-sm font-medium text-purple-100">전체 정답률</p>
         {overallAccuracy !== null ? (
-          <p className={`text-5xl font-bold ${getAccuracyColor(overallAccuracy)}`}>
-            {overallAccuracy}%
-          </p>
+          <p className="mt-2 text-5xl font-extrabold">{overallAccuracy}%</p>
         ) : (
-          <p className="text-2xl font-bold text-gray-300">데이터 없음</p>
+          <p className="mt-2 text-2xl font-bold text-purple-200">데이터 없음</p>
         )}
-        <p className="mt-1 text-sm text-gray-400">전체 풀이 기록 기준</p>
+        <p className="mt-2 text-sm text-purple-200">전체 풀이 기록 기준</p>
       </div>
 
       {/* 단원별 성적 테이블 */}
@@ -128,34 +126,23 @@ export default function ChildGrades() {
         {reports.length === 0 ? (
           <p className="py-6 text-center text-sm text-gray-400">풀이 기록이 없습니다.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-gray-500">
-                  <th className="pb-3 font-medium">단원</th>
-                  <th className="pb-3 font-medium text-center">정답률</th>
-                  <th className="pb-3 font-medium text-right">정답/문제수</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((r) => (
-                  <tr key={r.topic} className="border-b border-gray-100">
-                    <td className="py-3 font-medium text-gray-900">
-                      {r.topic}
-                      {r.subTopic && <div className="text-xs font-normal text-gray-400">{r.subTopic}</div>}
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className={`font-semibold ${getAccuracyColor(r.accuracy)}`}>
-                        {r.accuracy}%
-                      </span>
-                    </td>
-                    <td className="py-3 text-right text-gray-500">
-                      {r.correctCount}/{r.totalProblems}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="divide-y divide-gray-100">
+            {reports.map((r) => (
+              <div key={r.topic} className="flex items-center justify-between gap-2 px-4 py-3 sm:px-5">
+                <div className="min-w-0 max-w-[50%]">
+                  <span className="block truncate text-sm font-medium text-gray-900">{r.topic}</span>
+                  {r.subTopic && <span className="block truncate text-xs text-gray-400">{r.subTopic}</span>}
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className={`text-sm font-semibold ${getAccuracyColor(r.accuracy)}`}>
+                    {r.accuracy}%
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {r.correctCount}/{r.totalProblems}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -170,7 +157,7 @@ export default function ChildGrades() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" tick={{ fontSize: 12 }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => [`${value}%`, '정답률']} />
+                <Tooltip formatter={(value) => [`${String(value)}%`, '정답률']} />
                 <Line
                   type="monotone"
                   dataKey="accuracy"

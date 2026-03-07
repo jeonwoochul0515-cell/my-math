@@ -140,7 +140,7 @@ export default function StudentManagement() {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-blue-600" />
           <h2 className="text-xl font-bold text-gray-900">학생 관리</h2>

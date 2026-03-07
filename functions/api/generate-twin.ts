@@ -104,6 +104,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
+    if (!originalProblem.topic || !originalProblem.grade) {
+      return new Response(JSON.stringify({ error: '원본 문제의 학년(grade)과 단원(topic)이 필요합니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
+    if (!Array.isArray(originalProblem.choices) || originalProblem.choices.length !== 4) {
+      return new Response(JSON.stringify({ error: '원본 문제의 보기(choices)는 4개 배열이어야 합니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
+    if (!studentError || typeof studentError !== 'string') {
+      return new Response(JSON.stringify({ error: '학생의 오답(studentError)이 필요합니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
     /** count 입력 검증 및 클램핑 (1~3개) */
     const count = Math.max(1, Math.min(3, Math.floor(Number(body.count) || 1)));
 

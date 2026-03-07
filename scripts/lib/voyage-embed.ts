@@ -2,7 +2,7 @@
  * Voyage AI Embeddings API 래퍼
  * Gemini 대신 Voyage AI를 사용하여 텍스트 벡터화
  *
- * - 모델: voyage-3 (최대 1024차원, 768차원으로 설정)
+ * - 모델: voyage-3 (1024차원, DB VECTOR(1024)과 일치)
  * - 배치: 최대 128개/요청
  * - 무료 티어: 200M 토큰
  */

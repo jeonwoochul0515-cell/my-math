@@ -104,6 +104,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const body = (await context.request.json()) as RequestBody;
     const { grade, topic, difficulty, referenceProblems, curriculumContext } = body;
 
+    /** 필수 필드 검증 */
+    if (!grade || typeof grade !== 'string') {
+      return new Response(JSON.stringify({ error: '학년(grade)이 필요합니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+    if (!topic || typeof topic !== 'string') {
+      return new Response(JSON.stringify({ error: '단원(topic)이 필요합니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+    const validDifficulties = ['easy', 'medium', 'hard'];
+    if (!difficulty || !validDifficulties.includes(difficulty)) {
+      return new Response(JSON.stringify({ error: `난이도(difficulty)가 유효하지 않습니다. 가능한 값: ${validDifficulties.join(', ')}` }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
     /** H3: count 입력 검증 및 클램핑 */
     const count = Math.max(1, Math.min(10, Math.floor(Number(body.count) || 5)));
 

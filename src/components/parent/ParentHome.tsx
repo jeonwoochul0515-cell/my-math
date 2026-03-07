@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, TrendingUp, Calendar, Bell, Target, Loader2 } from 'lucide-react';
+import { CheckCircle, TrendingUp, Calendar, Bell, Target, Loader2, LogOut } from 'lucide-react';
 import { useParentContext } from '../../context/ParentContext';
 import { getSolveLogs } from '../../services/problems';
 import { getStudentAttendance } from '../../services/attendance';
@@ -9,7 +9,7 @@ import type { Notification as AppNotification } from '../../types';
 
 /** 학부모 홈 페이지 */
 export default function ParentHome() {
-  const { children, selectedChild, setSelectedChild } = useParentContext();
+  const { children, selectedChild, setSelectedChild, logout } = useParentContext();
 
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [attendanceRate, setAttendanceRate] = useState<number | null>(null);
@@ -78,17 +78,27 @@ export default function ParentHome() {
 
   return (
     <div className="space-y-6">
-      {/* 환영 메시지 + 자녀 선택 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{selectedChild.name} 학부모님, 안녕하세요!</h2>
+      {/* 환영 메시지 + 자녀 선택 — 모바일에서 세로 배치 */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold text-gray-900 truncate">{selectedChild.name} 학부모님, 안녕하세요!</h2>
           <p className="mt-1 text-sm text-gray-500">자녀의 학습 현황을 한눈에 확인하세요.</p>
         </div>
-        {children.length > 1 && (
-          <select value={selectedChild.id} onChange={(e) => { const c = children.find((ch) => ch.id === e.target.value); if (c) setSelectedChild(c); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
-            {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {children.length > 1 && (
+            <select value={selectedChild.id} onChange={(e) => { const c = children.find((ch) => ch.id === e.target.value); if (c) setSelectedChild(c); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+              {children.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
+          <button
+            onClick={logout}
+            className="flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+            title="로그아웃"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">로그아웃</span>
+          </button>
+        </div>
       </div>
 
       {/* 자녀 요약 카드 */}

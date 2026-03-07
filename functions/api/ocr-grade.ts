@@ -158,6 +158,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
+    /** 이미지 크기 제한: base64 기준 10MB (약 7.5MB 원본) */
+    const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+    if (image.length > MAX_IMAGE_SIZE) {
+      return new Response(JSON.stringify({ error: '이미지 크기가 10MB를 초과합니다. 더 작은 이미지를 사용해주세요.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
+    /** 문제 개수 제한: 한 번에 최대 20문제 */
+    if (problems.length > 20) {
+      return new Response(JSON.stringify({ error: '한 번에 최대 20문제까지 채점할 수 있습니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
     // =================================================================
     // STEP 1: Claude Vision으로 손글씨 답안 인식
     // =================================================================

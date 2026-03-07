@@ -138,10 +138,12 @@ export default function GradeCheck() {
         </div>
         <div className="divide-y divide-gray-100">
           {reports.map((item) => (
-            <div key={item.topic} className="flex items-center justify-between px-5 py-3">
-              <span className="text-sm font-medium text-gray-700">{item.topic}</span>
-              {item.subTopic && <span className="ml-1 text-xs text-gray-400">&middot; {item.subTopic}</span>}
-              <div className="flex items-center gap-3">
+            <div key={item.topic} className="flex items-center justify-between gap-2 px-4 py-3 sm:px-5">
+              <div className="min-w-0 shrink-0 max-w-[40%]">
+                <span className="block truncate text-sm font-medium text-gray-700">{item.topic}</span>
+                {item.subTopic && <span className="block truncate text-xs text-gray-400">{item.subTopic}</span>}
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div className="hidden w-32 sm:block">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
                     <div

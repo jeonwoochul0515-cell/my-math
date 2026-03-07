@@ -45,7 +45,7 @@ export default function AttendanceCalendar({ year, month, dayStatusMap }: Attend
               {day !== null ? (
                 <>
                   <span className={`flex h-8 w-8 items-center justify-center rounded-full text-sm ${
-                    isToday ? 'ring-2 ring-blue-500 font-bold text-blue-600' : ''
+                    isToday ? 'ring-2 ring-purple-500 font-bold text-purple-600' : ''
                   } ${isFuture ? 'text-gray-300' : 'text-gray-700'}`}>
                     {day}
                   </span>

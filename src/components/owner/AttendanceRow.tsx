@@ -2,11 +2,12 @@ import { LogIn, LogOut, Loader2 } from 'lucide-react';
 import type { AttendanceRecord, Student } from '../../types';
 
 /** 출결 상태 타입 */
-type AttendanceStatus = '출석' | '결석' | '퇴실';
+type AttendanceStatus = '출석' | '지각' | '결석' | '퇴실';
 
 /** 상태별 배지 스타일 */
 const STATUS_STYLES: Record<AttendanceStatus, string> = {
   출석: 'bg-green-100 text-green-700',
+  지각: 'bg-yellow-100 text-yellow-700',
   결석: 'bg-red-100 text-red-700',
   퇴실: 'bg-gray-100 text-gray-700',
 };

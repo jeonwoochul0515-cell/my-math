@@ -200,6 +200,27 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
+    /** solveData 항목 수 제한 (최대 50개 단원) */
+    if (solveData.length > 50) {
+      return new Response(JSON.stringify({ error: '학습 데이터가 50개 단원을 초과합니다.' }), {
+        status: 400, headers: HEADERS,
+      });
+    }
+
+    /** solveData 항목별 필수 필드 검증 */
+    for (const item of solveData) {
+      if (!item.topic || typeof item.topic !== 'string') {
+        return new Response(JSON.stringify({ error: '각 학습 데이터 항목에 topic(단원명)이 필요합니다.' }), {
+          status: 400, headers: HEADERS,
+        });
+      }
+      if (typeof item.total !== 'number' || typeof item.correct !== 'number') {
+        return new Response(JSON.stringify({ error: '각 학습 데이터 항목에 total과 correct가 숫자로 필요합니다.' }), {
+          status: 400, headers: HEADERS,
+        });
+      }
+    }
+
     const validReportTypes = ['weakness', 'parent_analysis', 'guidance_plan'];
     if (!validReportTypes.includes(reportType)) {
       return new Response(JSON.stringify({ error: `유효하지 않은 리포트 유형입니다. 가능한 값: ${validReportTypes.join(', ')}` }), {

@@ -112,7 +112,7 @@ export default function Dashboard() {
   const stats = [
     { label: '총 학생', value: students.length, icon: <Users className="h-6 w-6" />, color: 'bg-blue-100 text-blue-600' },
     { label: '오늘 출석', value: todayAttendance.length, icon: <UserCheck className="h-6 w-6" />, color: 'bg-green-100 text-green-600' },
-    { label: '총 반', value: classCount, icon: <BookOpen className="h-6 w-6" />, color: 'bg-purple-100 text-purple-600' },
+    { label: '총 반', value: classCount, icon: <BookOpen className="h-6 w-6" />, color: 'bg-sky-100 text-sky-600' },
     { label: '생성된 문제', value: problemCount, icon: <FileQuestion className="h-6 w-6" />, color: 'bg-orange-100 text-orange-600' },
   ];
 
@@ -131,14 +131,14 @@ export default function Dashboard() {
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-gray-900">대시보드</h2>
 
-      {/* 통계 카드 그리드 */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* 통계 카드 그리드 — 모바일 2열, 태블릿 이상 4열 */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="flex items-center gap-4 rounded-xl bg-white p-4 shadow-sm">
-            <div className={`rounded-lg p-3 ${stat.color}`}>{stat.icon}</div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-sm text-gray-500">{stat.label}</p>
+          <div key={stat.label} className="flex items-center gap-3 sm:gap-4 rounded-xl bg-white p-3 sm:p-4 shadow-sm">
+            <div className={`rounded-lg p-2.5 sm:p-3 ${stat.color}`}>{stat.icon}</div>
+            <div className="min-w-0">
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">{stat.label}</p>
             </div>
           </div>
         ))}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, ArrowRight, Lightbulb, Loader2, BookOpen } from 'lucide-react';
 import { useStudentContext } from '../../context/StudentContext';
 import { getProblems, submitAnswer } from '../../services/problems';
+import MathText from '../common/MathText';
 import type { Problem } from '../../types';
 
 /** 선택지 라벨 배열 */
@@ -102,12 +103,12 @@ export default function ProblemSolving() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      {/* 문제 헤더 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+      {/* 문제 헤더 — 모바일에서 줄바꿈 허용 */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
           <span className="rounded-full bg-indigo-100 px-3 py-1 font-medium text-indigo-700">{problem.topic}</span>
           {problem.subTopic && (
-            <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{problem.subTopic}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{problem.subTopic}</span>
           )}
           <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-600">
             {problem.difficulty === 'easy' ? '쉬움' : problem.difficulty === 'medium' ? '보통' : '어려움'}
@@ -118,7 +119,7 @@ export default function ProblemSolving() {
 
       {/* 문제 내용 */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-lg font-semibold leading-relaxed text-gray-900">{problem.content}</p>
+        <MathText text={problem.content} className="text-lg font-semibold leading-relaxed text-gray-900" />
       </div>
 
       {/* 선택지 */}
@@ -126,7 +127,7 @@ export default function ProblemSolving() {
         {problem.choices.map((choice, index) => (
           <button key={choice} onClick={() => !isSubmitted && setSelectedAnswer(choice)} disabled={isSubmitted} className={getChoiceStyle(choice)}>
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-sm font-bold">{CHOICE_LABELS[index]}</span>
-            <span>{choice}</span>
+            <MathText text={choice} />
           </button>
         ))}
       </div>
@@ -156,7 +157,7 @@ export default function ProblemSolving() {
             <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
             <div>
               <p className="text-sm font-semibold text-gray-700">풀이 해설</p>
-              <p className="mt-1 text-sm leading-relaxed text-gray-600">{problem.solution}</p>
+              <MathText text={problem.solution} className="mt-1 text-sm leading-relaxed text-gray-600" />
             </div>
           </div>
         </div>

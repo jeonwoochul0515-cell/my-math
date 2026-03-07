@@ -26,8 +26,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const body = (await context.request.json()) as RequestBody;
     const { texts } = body;
 
-    if (!texts?.length) {
-      return new Response(JSON.stringify({ error: '텍스트가 필요합니다.' }), {
+    if (!texts || !Array.isArray(texts) || texts.length === 0) {
+      return new Response(JSON.stringify({ error: '텍스트 배열이 필요합니다.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    /** 빈 문자열 검증 */
+    if (texts.some((t) => typeof t !== 'string' || t.trim().length === 0)) {
+      return new Response(JSON.stringify({ error: '모든 텍스트 항목은 비어 있지 않은 문자열이어야 합니다.' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
