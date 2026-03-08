@@ -12,3 +12,12 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>
 );
+
+/** PWA 서비스 워커 등록 */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* 서비스 워커 등록 실패 무시 */
+    });
+  });
+}
