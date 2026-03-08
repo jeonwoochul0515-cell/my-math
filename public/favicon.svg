@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+  </defs>
+  <!-- 둥근 사각형 배경 -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- M 글자 (마이매쓰) -->
+  <path d="M120 380V160l88 120 88-120v220" fill="none" stroke="white" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 수학 기호: 시그마 느낌의 장식 -->
+  <g transform="translate(330, 130)">
+    <!-- 플러스 기호 -->
+    <line x1="40" y1="10" x2="40" y2="70" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+    <line x1="10" y1="40" x2="70" y2="40" stroke="url(#accent)" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <!-- 수학 기호: 점 3개 (생략 부호) -->
+  <circle cx="350" cy="280" r="10" fill="url(#accent)" opacity="0.7"/>
+  <circle cx="385" cy="280" r="10" fill="url(#accent)" opacity="0.5"/>
+  <circle cx="420" cy="280" r="10" fill="url(#accent)" opacity="0.3"/>
+  <!-- 그래프 곡선 -->
+  <path d="M320 380 Q350 300 380 340 Q410 380 440 310" fill="none" stroke="url(#accent)" stroke-width="12" stroke-linecap="round"/>
+</svg>
