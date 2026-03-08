@@ -15,6 +15,7 @@ function toClass(row: Record<string, unknown>): Class {
       }[]) ?? [],
     capacity: row.capacity as number,
     academyId: row.academy_id as string,
+    coveredTopics: (row.covered_topics as string[]) ?? [],
   };
 }
 
@@ -51,4 +52,27 @@ export async function createClass(cls: Omit<Class, 'id'>): Promise<Class> {
 export async function deleteClass(id: string): Promise<void> {
   const { error } = await supabase.from('classes').delete().eq('id', id);
   if (error) throw new Error('반 삭제에 실패했습니다: ' + error.message);
+}
+
+/** 반 진도(배운 단원) 업데이트 */
+export async function updateCoveredTopics(
+  classId: string,
+  coveredTopics: string[]
+): Promise<void> {
+  const { error } = await supabase
+    .from('classes')
+    .update({ covered_topics: coveredTopics })
+    .eq('id', classId);
+  if (error) throw new Error('진도 업데이트에 실패했습니다: ' + error.message);
+}
+
+/** 학생의 소속 반 조회 */
+export async function getClassById(classId: string): Promise<Class | null> {
+  const { data, error } = await supabase
+    .from('classes')
+    .select('*')
+    .eq('id', classId)
+    .single();
+  if (error || !data) return null;
+  return toClass(data as Record<string, unknown>);
 }

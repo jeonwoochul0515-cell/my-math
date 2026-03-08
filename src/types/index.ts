@@ -34,6 +34,7 @@ export interface Class {
   schedule: { day: string; startTime: string; endTime: string }[];
   capacity: number;
   academyId: string;
+  coveredTopics: string[];
 }
 
 /** 출결 기록 */

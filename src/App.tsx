@@ -12,7 +12,7 @@ import StudentManagement from './components/owner/StudentManagement';
 import StudentResults from './components/owner/StudentResults';
 import StudentLayout from './components/student/StudentLayout';
 import StudentHome from './components/student/StudentHome';
-import ProblemSolving from './components/student/ProblemSolving';
+import AdaptiveProblemSolving from './components/student/AdaptiveProblemSolving';
 import GradeCheck from './components/student/GradeCheck';
 import StudentProfile from './components/student/StudentProfile';
 import AssignedProblemSolving from './components/student/AssignedProblemSolving';
@@ -159,7 +159,7 @@ function AppRoutes() {
       >
         <Route element={<StudentLayout />}>
           <Route index element={<StudentHome />} />
-          <Route path="solve" element={<ProblemSolving />} />
+          <Route path="solve" element={<AdaptiveProblemSolving />} />
           <Route path="assigned" element={<AssignedProblemSolving />} />
           <Route path="wrong-notes" element={<WrongAnswerNotebook />} />
           <Route path="feedback" element={<StudentFeedback />} />
