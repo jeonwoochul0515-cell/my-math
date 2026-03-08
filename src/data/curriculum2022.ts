@@ -421,7 +421,7 @@ const GRADE_E6: GradeCurriculum = {
           { code: '[6수04-03]', description: '탐구 문제를 설정하고, 그에 맞는 자료를 수집, 정리하여 적절한 그래프로 나타내고 해석할 수 있다.' },
         ]},
         { name: '비율 그래프', standards: [
-          { code: '[6수05-02]', description: '자료를 수집하여 비율 그래프(띠그래프, 원그래프)로 나타내고 해석할 수 있다.' },
+          { code: '[6수04-04]', description: '자료를 수집하여 비율 그래프(띠그래프, 원그래프)로 나타내고 해석할 수 있다.' },
         ]},
         { name: '경우의 수', standards: [
           { code: '[6수04-06]', description: '자료를 이용하여 가능성을 예상하고, 가능성에 근거하여 적절한 판단을 내릴 수 있다.' },
@@ -462,7 +462,6 @@ const GRADE_M1: GradeCurriculum = {
         ]},
         { name: '일차방정식', standards: [
           { code: '[9수02-04]', description: '일차방정식을 풀 수 있고, 이를 활용하여 문제를 해결할 수 있다.' },
-          { code: '[9수02-05]', description: '순서쌍과 좌표를 이해하고, 그 편리함을 인식할 수 있다.' },
         ]},
         { name: '좌표평면과 그래프', standards: [
           { code: '[9수02-05]', description: '순서쌍과 좌표를 이해하고, 그 편리함을 인식할 수 있다.' },
@@ -498,6 +497,7 @@ const GRADE_M1: GradeCurriculum = {
       name: '자료와 가능성',
       subChapters: [
         { name: '자료의 정리와 해석', standards: [
+          { code: '[9수04-01]', description: '중앙값, 최빈값 등 대푯값의 의미를 알고, 자료의 특성에 따라 적절한 대푯값을 선택하여 구할 수 있다.' },
           { code: '[9수04-02]', description: '자료를 줄기와 잎 그림, 도수분포표, 히스토그램, 도수분포다각형으로 나타내고 해석할 수 있다.' },
           { code: '[9수04-03]', description: '상대도수를 구하고, 상대도수의 분포를 표나 그래프로 나타내고 해석할 수 있다.' },
         ]},
@@ -559,6 +559,10 @@ const GRADE_M2: GradeCurriculum = {
           { code: '[9수03-13]', description: '삼각형의 닮음 조건을 이해하고, 이를 이용하여 두 삼각형이 닮음인지 판별할 수 있다.' },
           { code: '[9수03-14]', description: '평행선 사이의 선분의 길이의 비를 구할 수 있다.' },
         ]},
+        { name: '피타고라스 정리', standards: [
+          { code: '[9수03-15]', description: '피타고라스 정리를 이해하고 설명할 수 있다.' },
+          { code: '[9수03-16]', description: '피타고라스 정리를 활용하여 여러 가지 문제를 해결할 수 있다.' },
+        ]},
       ],
     },
     {
@@ -610,23 +614,20 @@ const GRADE_M3: GradeCurriculum = {
       name: '도형과 측정',
       subChapters: [
         { name: '삼각비', standards: [
-          { code: '[9수03-16]', description: '삼각비의 뜻을 알고, 간단한 삼각비의 값을 구할 수 있다.' },
-          { code: '[9수03-17]', description: '삼각비를 활용하여 여러 가지 문제를 해결할 수 있다.' },
+          { code: '[9수03-17]', description: '삼각비의 뜻을 알고, 간단한 삼각비의 값을 구할 수 있다.' },
+          { code: '[9수03-18]', description: '삼각비를 활용하여 여러 가지 문제를 해결할 수 있다.' },
         ]},
         { name: '원의 성질', standards: [
-          { code: '[9수03-18]', description: '원의 현에 관한 성질과 접선에 관한 성질을 이해하고 정당화할 수 있다.' },
-          { code: '[9수03-19]', description: '원주각의 성질을 이해하고 정당화할 수 있다.' },
+          { code: '[9수03-19]', description: '원의 현에 관한 성질과 접선에 관한 성질을 이해하고 정당화할 수 있다.' },
+          { code: '[9수03-20]', description: '원주각의 성질을 이해하고 정당화할 수 있다.' },
         ]},
       ],
     },
     {
       name: '자료와 가능성',
       subChapters: [
-        { name: '대푯값과 산포도', standards: [
-          { code: '[9수04-01]', description: '중앙값, 최빈값의 뜻을 알고, 자료의 특성에 따라 적절한 대푯값을 선택하여 구할 수 있다.' },
+        { name: '통계', standards: [
           { code: '[9수04-07]', description: '분산과 표준편차를 구하고 자료의 분포를 설명할 수 있다.' },
-        ]},
-        { name: '상관관계', standards: [
           { code: '[9수04-08]', description: '공학 도구를 이용하여 자료를 상자그림으로 나타내고 분포를 비교할 수 있다.' },
           { code: '[9수04-09]', description: '자료를 산점도로 나타내고 상관관계를 말할 수 있다.' },
         ]},
@@ -671,12 +672,24 @@ const GRADE_H_COMMON1: GradeCurriculum = {
       ],
     },
     {
-      name: '도형의 방정식',
+      name: '경우의 수',
       subChapters: [
-        { name: '도형의 방정식', standards: [
+        { name: '경우의 수', standards: [
           { code: '[10공수1-03-01]', description: '합의 법칙과 곱의 법칙을 이해하고, 적절한 전략을 사용하여 경우의 수와 관련된 문제를 해결할 수 있다.' },
           { code: '[10공수1-03-02]', description: '순열의 개념을 이해하고, 순열의 수를 구하는 방법을 설명할 수 있다.' },
           { code: '[10공수1-03-03]', description: '조합의 개념을 이해하고, 조합의 수를 구하는 방법을 설명할 수 있다.' },
+        ]},
+      ],
+    },
+    {
+      name: '행렬',
+      subChapters: [
+        { name: '행렬', standards: [
+          { code: '[10공수1-04-01]', description: '행렬의 뜻을 알고, 그 성질을 이해한다.' },
+          { code: '[10공수1-04-02]', description: '행렬의 덧셈, 뺄셈, 실수배를 할 수 있다.' },
+          { code: '[10공수1-04-03]', description: '행렬의 곱셈을 하고, 그 성질을 이해한다.' },
+          { code: '[10공수1-04-04]', description: '역행렬의 뜻을 알고, 2×2 행렬의 역행렬을 구할 수 있다.' },
+          { code: '[10공수1-04-05]', description: '행렬을 활용하여 연립일차방정식과 관련된 문제를 해결할 수 있다.' },
         ]},
       ],
     },
@@ -690,6 +703,20 @@ const GRADE_H_COMMON1: GradeCurriculum = {
 const GRADE_H_COMMON2: GradeCurriculum = {
   grade: '공통수학2',
   majorChapters: [
+    {
+      name: '도형의 방정식',
+      subChapters: [
+        { name: '도형의 방정식', standards: [
+          { code: '[10공수2-01-01]', description: '선분의 내분을 이해하고, 내분점의 좌표를 계산할 수 있다.' },
+          { code: '[10공수2-01-02]', description: '두 직선의 평행 조건과 수직 조건을 탐구하고 이해한다.' },
+          { code: '[10공수2-01-03]', description: '점과 직선 사이의 거리를 구하고, 관련된 문제를 해결할 수 있다.' },
+          { code: '[10공수2-01-04]', description: '원의 방정식을 구하고, 그래프를 그릴 수 있다.' },
+          { code: '[10공수2-01-05]', description: '좌표평면에서 원과 직선의 위치 관계를 판단하고, 이를 활용하여 문제를 해결할 수 있다.' },
+          { code: '[10공수2-01-06]', description: '평행이동의 뜻을 알고, 평행이동한 도형의 방정식을 구할 수 있다.' },
+          { code: '[10공수2-01-07]', description: '원점, x축, y축, 직선 y=x에 대한 대칭이동의 뜻을 알고, 대칭이동한 도형의 방정식을 구할 수 있다.' },
+        ]},
+      ],
+    },
     {
       name: '집합과 명제',
       subChapters: [
@@ -706,26 +733,14 @@ const GRADE_H_COMMON2: GradeCurriculum = {
       ],
     },
     {
-      name: '함수',
+      name: '함수와 그래프',
       subChapters: [
-        { name: '함수', standards: [
+        { name: '함수와 그래프', standards: [
           { code: '[10공수2-03-01]', description: '함수의 개념을 설명하고, 그 그래프를 이해한다.' },
           { code: '[10공수2-03-02]', description: '함수의 합성을 설명하고, 합성함수를 구할 수 있다.' },
           { code: '[10공수2-03-03]', description: '역함수의 개념을 설명하고, 역함수를 구할 수 있다.' },
           { code: '[10공수2-03-04]', description: '유리함수 y=k/(x-p)+q의 그래프를 그릴 수 있고, 그 그래프의 성질을 탐구할 수 있다.' },
           { code: '[10공수2-03-05]', description: '무리함수 y=a√(x-p)+q의 그래프를 그릴 수 있고, 그 그래프의 성질을 탐구할 수 있다.' },
-        ]},
-      ],
-    },
-    {
-      name: '경우의 수',
-      subChapters: [
-        { name: '경우의 수', standards: [
-          { code: '[10공수2-01-01]', description: '선분의 내분을 이해하고, 내분점의 좌표를 계산할 수 있다.' },
-          { code: '[10공수2-01-02]', description: '두 직선의 평행 조건과 수직 조건을 탐구하고 이해한다.' },
-          { code: '[10공수2-01-03]', description: '점과 직선 사이의 거리를 구하고, 관련된 문제를 해결할 수 있다.' },
-          { code: '[10공수2-01-04]', description: '원의 방정식을 구하고, 그래프를 그릴 수 있다.' },
-          { code: '[10공수2-01-05]', description: '좌표평면에서 원과 직선의 위치 관계를 판단하고, 이를 활용하여 문제를 해결할 수 있다.' },
         ]},
       ],
     },
@@ -755,6 +770,16 @@ const GRADE_H_ALGEBRA: GradeCurriculum = {
       ],
     },
     {
+      name: '삼각함수',
+      subChapters: [
+        { name: '삼각함수', standards: [
+          { code: '[12대수02-01]', description: '일반각과 호도법의 뜻을 알고, 그 관계를 설명할 수 있다.' },
+          { code: '[12대수02-02]', description: '삼각함수의 개념을 이해하여 사인함수, 코사인함수, 탄젠트함수의 그래프를 그리고, 그 성질을 설명할 수 있다.' },
+          { code: '[12대수02-03]', description: '사인법칙과 코사인법칙을 이해하고, 실생활 문제를 해결할 수 있다.' },
+        ]},
+      ],
+    },
+    {
       name: '수열',
       subChapters: [
         { name: '수열', standards: [
@@ -778,16 +803,6 @@ const GRADE_H_ALGEBRA: GradeCurriculum = {
 const GRADE_H_CALCULUS1: GradeCurriculum = {
   grade: '미적분I',
   majorChapters: [
-    {
-      name: '삼각함수',
-      subChapters: [
-        { name: '삼각함수', standards: [
-          { code: '[12대수02-01]', description: '일반각과 호도법의 뜻을 알고, 그 관계를 설명할 수 있다.' },
-          { code: '[12대수02-02]', description: '삼각함수의 개념을 이해하여 사인함수, 코사인함수, 탄젠트함수의 그래프를 그리고, 그 성질을 설명할 수 있다.' },
-          { code: '[12대수02-03]', description: '사인법칙과 코사인법칙을 이해하고, 실생활 문제를 해결할 수 있다.' },
-        ]},
-      ],
-    },
     {
       name: '함수의 극한과 연속',
       subChapters: [

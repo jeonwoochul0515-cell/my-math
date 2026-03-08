@@ -86,7 +86,12 @@ export default function AIGeneration() {
       {hasProblems && (
         <div className="hidden print:block print:mb-6">
           <div className="border-b-2 border-black pb-3 mb-4">
-            <h1 className="text-center text-xl font-bold">{academy.name} 수학 문제지</h1>
+            <div className="flex items-center justify-center gap-3">
+              {academy.logoUrl && (
+                <img src={academy.logoUrl} alt="" className="h-10 w-10 object-contain" />
+              )}
+              <h1 className="text-center text-xl font-bold">{academy.name} 수학 문제지</h1>
+            </div>
             <div className="mt-2 flex justify-between text-sm">
               <span>{grade} · {topic} · {DIFFICULTY_LABEL[difficulty] ?? difficulty}</span>
               <span>{todayString()}</span>

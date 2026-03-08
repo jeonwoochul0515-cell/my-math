@@ -7,6 +7,7 @@ import ClassManagement from './components/owner/ClassManagement';
 import AIGeneration from './components/owner/AIGeneration';
 import OwnerSettings from './components/owner/Settings';
 import OwnerLayout from './components/owner/OwnerLayout';
+import OwnerAppLayout from './components/owner/OwnerAppLayout';
 import StudentManagement from './components/owner/StudentManagement';
 import StudentResults from './components/owner/StudentResults';
 import StudentLayout from './components/student/StudentLayout';
@@ -107,17 +108,6 @@ function RoleSelectPage() {
   );
 }
 
-/** 원장 네비게이션 */
-const ownerNavItems: NavItem[] = [
-  { label: '대시보드', path: '/owner', icon: 'LayoutDashboard' },
-  { label: '출결관리', path: '/owner/attendance', icon: 'ClipboardCheck' },
-  { label: '반 관리', path: '/owner/classes', icon: 'UsersRound' },
-  { label: '학생관리', path: '/owner/students', icon: 'GraduationCap' },
-  { label: 'AI 출제', path: '/owner/ai-generate', icon: 'Sparkles' },
-  { label: '채점 결과', path: '/owner/results', icon: 'ClipboardList' },
-  { label: '설정', path: '/owner/settings', icon: 'Settings' },
-];
-
 /** 학생 네비게이션 (모바일 하단탭은 상위 5개만 표시) */
 const studentNavItems: NavItem[] = [
   { label: '홈', path: '/student', icon: 'Home' },
@@ -147,9 +137,7 @@ function AppRoutes() {
       {/* 원장 라우트 */}
       <Route
         path="/owner"
-        element={
-          <AppLayout role="owner" title="마이매쓰 원장" navItems={ownerNavItems} />
-        }
+        element={<OwnerAppLayout />}
       >
         <Route element={<OwnerLayout />}>
           <Route index element={<Dashboard />} />

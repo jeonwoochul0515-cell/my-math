@@ -5,12 +5,13 @@ interface HeaderProps {
   title: string;
   role: UserRole;
   userName?: string;
+  logoUrl?: string;
   onMenuToggle?: () => void;
   onLogout?: () => void;
 }
 
 /** 상단 헤더 바 */
-export default function Header({ title, role, userName, onMenuToggle, onLogout }: HeaderProps) {
+export default function Header({ title, role, userName, logoUrl, onMenuToggle, onLogout }: HeaderProps) {
   const bgMap: Record<string, string> = {
     owner: 'bg-blue-600',
     student: 'bg-indigo-600',
@@ -26,6 +27,9 @@ export default function Header({ title, role, userName, onMenuToggle, onLogout }
             <button onClick={onMenuToggle} className="md:hidden p-1 rounded-lg hover:bg-white/20">
               <Menu className="h-5 w-5" />
             </button>
+          )}
+          {logoUrl && (
+            <img src={logoUrl} alt="" className="h-7 w-7 rounded object-contain bg-white/20" />
           )}
           <h1 className="text-lg font-bold truncate">{title}</h1>
         </div>

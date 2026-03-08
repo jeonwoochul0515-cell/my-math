@@ -14,6 +14,7 @@ export async function getAcademy(ownerId: string): Promise<Academy | null> {
     name: data.name as string,
     ownerId: data.owner_id as string,
     textbookPublisher: (data.textbook_publisher as string) ?? undefined,
+    logoUrl: (data.logo_url as string) ?? undefined,
     createdAt: new Date(data.created_at as string),
   };
 }
@@ -40,12 +41,13 @@ export async function createAcademy(
 /** 학원 정보 수정 */
 export async function updateAcademy(
   id: string,
-  updates: { name?: string; textbookPublisher?: string }
+  updates: { name?: string; textbookPublisher?: string; logoUrl?: string | null }
 ): Promise<void> {
   /** Supabase 컬럼명(snake_case)으로 변환 */
-  const dbUpdates: Record<string, string | undefined> = {};
+  const dbUpdates: Record<string, string | null | undefined> = {};
   if (updates.name !== undefined) dbUpdates.name = updates.name;
   if (updates.textbookPublisher !== undefined) dbUpdates.textbook_publisher = updates.textbookPublisher;
+  if (updates.logoUrl !== undefined) dbUpdates.logo_url = updates.logoUrl;
 
   const { error } = await supabase
     .from('academies')

@@ -10,13 +10,14 @@ interface AppLayoutProps {
   title: string;
   navItems: NavItem[];
   userName?: string;
+  logoUrl?: string;
   onLogout?: () => void;
   /** 네비 항목별 배지 숫자 (path -> count). 0이면 표시하지 않음 */
   badges?: Record<string, number>;
 }
 
 /** 메인 앱 레이아웃 - PC: 사이드바 + 콘텐츠 / 모바일: 하단탭 + 콘텐츠 */
-export default function AppLayout({ role, title, navItems, userName, onLogout, badges }: AppLayoutProps) {
+export default function AppLayout({ role, title, navItems, userName, logoUrl, onLogout, badges }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const bgMap: Record<string, string> = {
@@ -82,6 +83,7 @@ export default function AppLayout({ role, title, navItems, userName, onLogout, b
         title={title}
         role={role}
         userName={userName}
+        logoUrl={logoUrl}
         onMenuToggle={() => setSidebarOpen(true)}
         onLogout={onLogout}
       />

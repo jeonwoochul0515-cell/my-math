@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Save, Plus, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Save, Plus, Loader2, Upload, Trash2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import Loading from '../common/Loading';
 import { SUPPORTED_PUBLISHERS } from '../../data/curriculum2022';
+import { uploadLogo, deleteLogo } from '../../services/logo';
 
 /** 설정 페이지 - 학원 정보 수정 및 서비스 정보 */
 export default function OwnerSettings() {
@@ -14,6 +15,33 @@ export default function OwnerSettings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /** 로고 파일 업로드 공통 핸들러 */
+  const handleLogoFile = async (file: File) => {
+    if (!user?.uid) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError('로고 파일은 2MB 이하만 가능합니다.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setError('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+    setLogoUploading(true);
+    setError(null);
+    try {
+      const url = await uploadLogo(user.uid, file);
+      await update({ logoUrl: url });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '로고 업로드에 실패했습니다.');
+    } finally {
+      setLogoUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   /** 학원 정보가 로드되면 폼에 반영 */
   useEffect(() => {
@@ -140,6 +168,89 @@ export default function OwnerSettings() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* 학원 로고 (화이트라벨) */}
+      <div className="rounded-xl bg-white p-5 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold text-gray-900">학원 로고</h3>
+        <p className="mb-4 text-sm text-gray-500">
+          등록한 로고는 시험지 인쇄, 앱 헤더 등에 표시됩니다.
+        </p>
+
+        {/* 드래그앤드롭 영역 */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={async (e) => {
+            e.preventDefault();
+            setDragging(false);
+            const file = e.dataTransfer.files[0];
+            if (file) await handleLogoFile(file);
+          }}
+          onClick={() => !logoUploading && fileInputRef.current?.click()}
+          className={`relative flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed p-6 transition-colors ${
+            dragging
+              ? 'border-blue-500 bg-blue-50'
+              : academy.logoUrl
+                ? 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/50'
+          }`}
+        >
+          {academy.logoUrl ? (
+            <img src={academy.logoUrl} alt="학원 로고" className="h-20 w-20 object-contain" />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
+              <Upload className="h-6 w-6 text-gray-400" />
+            </div>
+          )}
+          {logoUploading ? (
+            <div className="flex items-center gap-2 text-sm text-blue-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              업로드 중...
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              {dragging ? '여기에 놓으세요' : '클릭하거나 이미지를 드래그하세요'}
+            </p>
+          )}
+          <p className="text-xs text-gray-400">PNG, JPG, SVG, WebP (최대 2MB)</p>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) await handleLogoFile(file);
+          }}
+        />
+
+        {/* 로고 삭제 버튼 */}
+        {academy.logoUrl && (
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!user?.uid) return;
+              setLogoUploading(true);
+              setError(null);
+              try {
+                await deleteLogo(user.uid);
+                await update({ logoUrl: null });
+              } catch (err) {
+                setError(err instanceof Error ? err.message : '로고 삭제에 실패했습니다.');
+              } finally {
+                setLogoUploading(false);
+              }
+            }}
+            disabled={logoUploading}
+            className="mt-3 flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+            로고 삭제
+          </button>
+        )}
       </div>
 
       {/* 교과서 설정 */}

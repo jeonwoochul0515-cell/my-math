@@ -94,7 +94,7 @@ export default function MathFigure({ spec, className }: { spec: FigureSpec; clas
     <div
       ref={containerRef}
       id={boardId}
-      className={`mx-auto w-[280px] h-[280px] ${className ?? ''}`}
+      className={`mx-auto w-[280px] h-[280px] md:w-[400px] md:h-[400px] ${className ?? ''}`}
     />
   );
 }

@@ -13,6 +13,18 @@ import { supabase } from '../config/supabase';
 import type { WeaknessReport, FigureSpec } from '../types';
 import { getCurriculumLookup } from '../utils/curriculumMapping';
 
+/** 도형/그래프가 필요한 단원 목록 — 이 단원은 원본 문제를 직접 사용 */
+const FIGURE_TOPICS = [
+  '여러 가지 모양', '평면도형', '평면도형의 이동', '사각형', '다각형',
+  '다각형의 둘레와 넓이', '합동과 대칭', '각기둥과 각뿔',
+  '직육면체의 부피와 겉넓이', '원의 넓이', '원기둥·원뿔·구',
+  '기본 도형', '작도와 합동', '평면도형의 성질', '입체도형의 성질',
+  '삼각형의 성질', '사각형의 성질', '도형의 닮음', '삼각비', '원의 성질',
+  '도형의 방정식',
+  '좌표평면과 그래프', '정비례와 반비례', '일차함수', '이차함수',
+  '삼각함수', '함수의 극한과 연속', '미분', '적분', '함수',
+];
+
 // ---------------------------------------------------------------------------
 // 타입 정의
 // ---------------------------------------------------------------------------
@@ -385,6 +397,107 @@ async function rerankWithClaude(
 }
 
 // ---------------------------------------------------------------------------
+// 4.5 도형/그래프 단원: 원본 문제 직접 조회 (AI 변환 없이)
+// ---------------------------------------------------------------------------
+
+/**
+ * 도형/그래프 단원인지 판별한다.
+ */
+function isFigureTopic(topic: string): boolean {
+  return FIGURE_TOPICS.some((t) => topic.includes(t) || t.includes(topic));
+}
+
+/**
+ * problem_embeddings 테이블에서 원본 문제를 직접 조회하여
+ * AI 변환 없이 그대로 반환한다. 도형/그래프 문제의 정확성 보존을 위해 사용.
+ *
+ * @param grade - 학년
+ * @param topic - 단원
+ * @param difficulty - 난이도
+ * @param count - 반환할 문제 수
+ * @returns 원본 문제 배열 (GeneratedProblem 형태)
+ */
+async function fetchOriginalProblems(
+  grade: string,
+  topic: string,
+  difficulty: string,
+  count: number
+): Promise<GeneratedProblem[]> {
+  /** 난이도 필터로 먼저 조회, 부족하면 난이도 무관 조회 */
+  let query = supabase
+    .from('problem_embeddings')
+    .select('id, content, answer, solution, difficulty')
+    .eq('grade', grade)
+    .eq('topic', topic);
+
+  if (difficulty) {
+    query = query.eq('difficulty', difficulty);
+  }
+
+  const { data, error } = await query.limit(count * 3);
+
+  if (error) {
+    throw new Error(`원본 문제 조회 실패: ${error.message}`);
+  }
+
+  let rows = (data ?? []) as Record<string, unknown>[];
+
+  /** 난이도 필터 결과가 부족하면 난이도 무관으로 재조회 */
+  if (rows.length < count && difficulty) {
+    const { data: fallbackData } = await supabase
+      .from('problem_embeddings')
+      .select('id, content, answer, solution, difficulty')
+      .eq('grade', grade)
+      .eq('topic', topic)
+      .limit(count * 3);
+    rows = (fallbackData ?? []) as Record<string, unknown>[];
+  }
+
+  /** 랜덤 셔플 후 count개 선택 */
+  for (let i = rows.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rows[i], rows[j]] = [rows[j], rows[i]];
+  }
+
+  const selected = rows.slice(0, count);
+
+  /** 4지선다 보기 생성: 정답 + 같은 단원의 다른 문제 답 3개 */
+  const allAnswers = rows.map((r) => r.answer as string);
+  const uniqueAnswers = [...new Set(allAnswers)];
+
+  return selected.map((row) => {
+    const answer = row.answer as string;
+    /** 오답 보기 생성: 다른 문제들의 정답에서 랜덤 선택 */
+    const otherAnswers = uniqueAnswers.filter((a) => a !== answer);
+    const shuffledOthers = otherAnswers.sort(() => Math.random() - 0.5);
+    const wrongChoices = shuffledOthers.slice(0, 3);
+
+    /** 보기가 3개 미만이면 더미 보기 추가 */
+    while (wrongChoices.length < 3) {
+      wrongChoices.push(`보기 ${String(wrongChoices.length + 2)}`);
+    }
+
+    /** 보기 배열 생성 후 셔플 */
+    const choices = [answer, ...wrongChoices];
+    for (let i = choices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+
+    return {
+      id: `orig-${String(row.id)}`,
+      content: row.content as string,
+      answer,
+      solution: (row.solution as string) ?? '',
+      choices,
+      grade,
+      topic,
+      difficulty: (row.difficulty as string) ?? difficulty,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // 5. AI 문제 생성 (하이브리드 검색 + 리랭킹 + Claude 생성)
 // ---------------------------------------------------------------------------
 
@@ -407,12 +520,75 @@ export async function generateProblemsWithRAG(
   const { grade, topic, subTopic, difficulty, count } = params;
 
   try {
-    /** 1단계: 쿼리 구성 및 임베딩 생성 (세부 성취기준이 있으면 포함) */
+    /** 도형/그래프 단원: 원본 문제를 직접 반환 (AI 변환 없이 정확성 보존) */
+    if (isFigureTopic(topic)) {
+      const originals = await fetchOriginalProblems(grade, topic, difficulty, count);
+      if (originals.length > 0) {
+        /** DB에 generated_problems로도 저장 (이력 관리용) */
+        const saved: GeneratedProblem[] = [];
+        for (const p of originals) {
+          const { data, error } = await supabase
+            .from('generated_problems')
+            .insert({
+              content: p.content,
+              answer: p.answer,
+              solution: p.solution,
+              grade,
+              topic,
+              sub_topic: subTopic ?? null,
+              difficulty: p.difficulty,
+              choices: p.choices,
+              source_refs: [Number(p.id.replace('orig-', ''))],
+            })
+            .select()
+            .single();
+
+          if (error) {
+            saved.push(p);
+          } else {
+            const row = data as Record<string, unknown>;
+            saved.push({
+              ...p,
+              id: row.id as string,
+            });
+          }
+        }
+        return saved;
+      }
+      /** 원본 문제가 없으면 AI 생성으로 폴백 */
+    }
+
+    /** 1단계: 쿼리 구성 + 임베딩/교육과정 병렬 조회 */
     const vectorQuery = subTopic
       ? `${grade} ${topic} ${subTopic} ${difficulty} 수학 문제`
       : `${grade} ${topic} ${difficulty} 수학 문제`;
-    const fulltextQuery = topic; // 풀텍스트는 단원명 중심
-    const queryEmbedding = await getEmbedding(vectorQuery);
+    const fulltextQuery = topic;
+
+    /** 임베딩 생성과 교육과정 조회를 병렬 실행 */
+    const curriculumPromise = (async () => {
+      try {
+        const { sectionKey, domain } = getCurriculumLookup(grade, topic);
+        if (!sectionKey) return '';
+        const { data: sectionData } = await supabase
+          .from('curriculum_sections')
+          .select('content')
+          .eq('section_key', sectionKey)
+          .single();
+        if (!sectionData) return '';
+        return extractDomainContent(
+          (sectionData as Record<string, unknown>).content as string,
+          domain,
+          6000
+        );
+      } catch {
+        return '';
+      }
+    })();
+
+    const [queryEmbedding, curriculumContext] = await Promise.all([
+      getEmbedding(vectorQuery),
+      curriculumPromise,
+    ]);
 
     /** 2단계: 하이브리드 검색 (벡터 + 풀텍스트 + RRF) */
     let searchResults: HybridSearchResult[] = [];
@@ -471,30 +647,6 @@ export async function generateProblemsWithRAG(
       answer: p.answer,
       solution: p.solution,
     }));
-
-    /** 3.5단계: 교육과정 컨텍스트 조회 */
-    let curriculumContext = '';
-    try {
-      const { sectionKey, domain } = getCurriculumLookup(grade, topic);
-      if (sectionKey) {
-        const { data: sectionData } = await supabase
-          .from('curriculum_sections')
-          .select('content')
-          .eq('section_key', sectionKey)
-          .single();
-
-        if (sectionData) {
-          curriculumContext = extractDomainContent(
-            (sectionData as Record<string, unknown>).content as string,
-            domain,
-            6000
-          );
-        }
-      }
-    } catch {
-      /** 교육과정 조회 실패 시 빈 문자열 유지 (기존 동작 유지) */
-      console.warn('교육과정 컨텍스트 조회 실패, 교육과정 없이 생성합니다.');
-    }
 
     /** 4단계: Claude API로 문제 생성 */
     const response = await fetch('/api/generate-problem', {

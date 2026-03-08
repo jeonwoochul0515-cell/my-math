@@ -9,6 +9,7 @@ export interface Academy {
   ownerPhone?: string;
   address?: string;
   textbookPublisher?: string;
+  logoUrl?: string;
   createdAt: Date;
 }
 

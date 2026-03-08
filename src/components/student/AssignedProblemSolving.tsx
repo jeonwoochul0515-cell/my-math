@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { ChevronLeft, ChevronRight, Camera, Send, Loader2, BookOpen } from 'lucide-react';
 import { useStudentContext } from '../../context/StudentContext';
 import { getStudentAssignments, updateAssignmentStatus } from '../../services/assignments';
@@ -7,6 +7,9 @@ import { submitAnswer } from '../../services/problems';
 import MathText from '../common/MathText';
 import AssignedProblemResults, { type GradingResult } from './AssignedProblemResults';
 import type { Problem, ProblemAssignment } from '../../types';
+
+/** 도형/그래프 렌더러 (lazy load) */
+const MathFigure = lazy(() => import('../common/MathFigure'));
 
 /** 선택지 라벨 */
 const CHOICE_LABELS = ['A', 'B', 'C', 'D'];
@@ -129,6 +132,11 @@ export default function AssignedProblemSolving() {
       {/* 문제 내용 */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <MathText text={problem.content} className="text-lg font-semibold leading-relaxed text-gray-900" />
+        {problem.figure && (
+          <Suspense fallback={<div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>}>
+            <MathFigure spec={problem.figure} className="mt-4" />
+          </Suspense>
+        )}
       </div>
       {/* 선택지 (직접 입력 모드) */}
       {gradingMode === 'manual' && (

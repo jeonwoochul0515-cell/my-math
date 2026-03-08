@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { CheckCircle, XCircle, ArrowRight, Lightbulb, Loader2, BookOpen } from 'lucide-react';
 import { useStudentContext } from '../../context/StudentContext';
 import { getProblems, submitAnswer } from '../../services/problems';
 import MathText from '../common/MathText';
 import type { Problem } from '../../types';
+
+/** 도형/그래프 렌더러 (lazy load) */
+const MathFigure = lazy(() => import('../common/MathFigure'));
 
 /** 선택지 라벨 배열 */
 const CHOICE_LABELS = ['A', 'B', 'C', 'D'];
@@ -120,6 +123,11 @@ export default function ProblemSolving() {
       {/* 문제 내용 */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <MathText text={problem.content} className="text-lg font-semibold leading-relaxed text-gray-900" />
+        {problem.figure && (
+          <Suspense fallback={<div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>}>
+            <MathFigure spec={problem.figure} className="mt-4" />
+          </Suspense>
+        )}
       </div>
 
       {/* 선택지 */}

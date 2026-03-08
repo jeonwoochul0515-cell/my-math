@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "import:aihub": "tsx --env-file=.env scripts/import-aihub.ts",
     "generate:embeddings": "tsx --env-file=.env scripts/generate-embeddings.ts",
-    "upload:curriculum": "tsx --env-file=.env scripts/upload-curriculum.ts"
+    "upload:curriculum": "tsx --env-file=.env scripts/upload-curriculum.ts",
+    "download:huggingface": "tsx --env-file=.env scripts/download-huggingface.ts",
+    "import:japan": "tsx --env-file=.env scripts/import-japan-problems.ts",
+    "import:japan:parallel": "tsx --env-file=.env scripts/split-and-import.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, Trash2, Loader2 } from 'lucide-react';
 import MathText from '../common/MathText';
 import type { Problem, WrongAnswerNote } from '../../types';
+
+/** 도형/그래프 렌더러 (lazy load) */
+const MathFigure = lazy(() => import('../common/MathFigure'));
 
 /** 쌍둥이 문제 타입 */
 interface TwinProblem {
@@ -86,6 +89,11 @@ export default function WrongAnswerCard({
         </span>
       </div>
       <MathText text={problem.content} className="text-base leading-relaxed text-gray-900" />
+      {problem.figure && (
+        <Suspense fallback={<div className="flex justify-center py-3"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>}>
+          <MathFigure spec={problem.figure} className="mt-3" />
+        </Suspense>
+      )}
 
       {/* 내 답 / 정답 */}
       <div className="mt-3 space-y-1 text-sm">
