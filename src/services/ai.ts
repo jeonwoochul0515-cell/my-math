@@ -705,6 +705,7 @@ export async function generateProblemsWithRAG(
           choices: problem.choices ?? [],
           source_refs: sourceRefs.length > 0 ? sourceRefs : null,
           similarity_score: avgSimilarity > 0 ? avgSimilarity : null,
+          figure: problem.figure ?? null,
         })
         .select()
         .single();
@@ -727,6 +728,11 @@ export async function generateProblemsWithRAG(
       }
 
       const row = data as Record<string, unknown>;
+      /** DB에서 읽은 figure 또는 원본 figure 사용 */
+      const rawFig = row.figure as Record<string, unknown> | null | undefined;
+      const savedFigure = rawFig && typeof rawFig === 'object' && 'boundingBox' in rawFig
+        ? (rawFig as unknown as FigureSpec)
+        : problem.figure;
       savedProblems.push({
         id: row.id as string,
         content: row.content as string,
@@ -737,7 +743,7 @@ export async function generateProblemsWithRAG(
         topic: row.topic as string,
         subTopic,
         difficulty: row.difficulty as string,
-        figure: problem.figure,
+        figure: savedFigure,
       });
     }
 
