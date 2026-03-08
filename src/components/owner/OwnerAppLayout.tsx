@@ -32,7 +32,7 @@ export default function OwnerAppLayout() {
       title={title}
       navItems={ownerNavItems}
       userName={user?.displayName ?? user?.email ?? undefined}
-      logoUrl={academy?.logoUrl}
+      logoUrl={academy?.logoUrl ?? undefined}
       onLogout={undefined}
     />
   );
