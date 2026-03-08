@@ -67,8 +67,17 @@ async function callClaude(
     throw new Error('Claude API가 빈 응답을 반환했습니다.');
   }
   let text = data.content[0]?.text ?? '';
-  /** 코드블록 감싸기 제거 */
-  text = text.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  /** 코드블록 감싸기 제거 (중첩/반복 대응) */
+  text = text.trim();
+  while (/^```/.test(text) || /```\s*$/.test(text)) {
+    text = text.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  }
+  /** JSON 배열 부분만 추출 (앞뒤 설명 텍스트 제거) */
+  const bracketStart = text.indexOf('[');
+  const bracketEnd = text.lastIndexOf(']');
+  if (bracketStart >= 0 && bracketEnd > bracketStart) {
+    text = text.slice(bracketStart, bracketEnd + 1);
+  }
   return text;
 }
 
@@ -227,7 +236,9 @@ ${figureBlock}
   }
 ]`;
 
-    const genText = await callClaude(ANTHROPIC_API_KEY, generatePrompt, 4096);
+    /** 도형 문제는 figure JSON이 추가되어 토큰이 더 필요 */
+    const maxTokens = needsFigure ? 8192 : 4096;
+    const genText = await callClaude(ANTHROPIC_API_KEY, generatePrompt, maxTokens);
 
     /** JSON 파싱 */
     let rawProblems: Partial<RawProblem>[];
@@ -237,7 +248,9 @@ ${figureBlock}
         throw new Error('응답이 배열이 아닙니다.');
       }
       rawProblems = parsed as Partial<RawProblem>[];
-    } catch {
+    } catch (parseErr) {
+      const preview = genText.slice(0, 200);
+      console.error('JSON 파싱 실패:', parseErr, '응답 미리보기:', preview);
       return new Response(JSON.stringify({ error: 'AI 응답 파싱에 실패했습니다. 다시 시도해주세요.' }), {
         status: 422, headers: HEADERS,
       });
