@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Loader2, X, Users, Phone, BookOpen } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Trash2, Loader2, X, Users, Phone, BookOpen, Wallet } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useStudents } from '../../hooks/useStudents';
 import { getClasses } from '../../services/classes';
+import { updatePaymentDay } from '../../services/students';
+import { getTuitionPayments } from '../../services/tuition';
+import TuitionBadge from './TuitionBadge';
 import Loading from '../common/Loading';
-import type { Student, Class } from '../../types';
+import type { Student, Class, TuitionPayment } from '../../types';
 
 /** 학년 선택 옵션 */
 const GRADE_OPTIONS = ['초1', '초2', '초3', '초4', '초5', '초6', '중1', '중2', '중3', '고1', '고2', '고3'] as const;
@@ -56,6 +59,31 @@ export default function StudentManagement() {
   const [formPhone, setFormPhone] = useState('');
   const [formParentPhone, setFormParentPhone] = useState('');
   const [formClassId, setFormClassId] = useState('');
+  const [formPaymentDay, setFormPaymentDay] = useState<number | ''>('');
+
+  /** 수납 데이터 */
+  const [payments, setPayments] = useState<TuitionPayment[]>([]);
+  const [paymentDayLoading, setPaymentDayLoading] = useState<string | null>(null);
+
+  /** 현재 연월 */
+  const currentYearMonth = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
+  /** 수납 기록 로드 */
+  const loadPayments = useCallback(async () => {
+    if (!academy?.id) return;
+    try {
+      const data = await getTuitionPayments(academy.id, currentYearMonth);
+      setPayments(data);
+    } catch { /* 조용히 처리 */ }
+  }, [academy?.id, currentYearMonth]);
+
+  useEffect(() => { loadPayments(); }, [loadPayments]);
+
+  /** 학생별 수납 맵 */
+  const paymentMap = new Map(payments.map((p) => [p.studentId, p]));
 
   /** 폼 초기화 */
   const resetForm = () => {
@@ -64,6 +92,7 @@ export default function StudentManagement() {
     setFormPhone('');
     setFormParentPhone('');
     setFormClassId('');
+    setFormPaymentDay('');
   };
 
   /** 학생 추가 처리 (PIN은 자동 생성) */
@@ -79,6 +108,7 @@ export default function StudentManagement() {
         pin: generatePin(),
         classId: formClassId,
         academyId: academy.id,
+        paymentDay: formPaymentDay ? Number(formPaymentDay) : null,
       };
       await add(newStudent);
       resetForm();
@@ -118,6 +148,20 @@ export default function StudentManagement() {
       );
     } finally {
       setClassChangeLoading(null);
+    }
+  };
+
+  /** 수납일 변경 처리 */
+  const handlePaymentDayChange = async (studentId: string, day: number | null) => {
+    setPaymentDayLoading(studentId);
+    try {
+      await updatePaymentDay(studentId, day);
+      // 로컬 상태 갱신은 useStudents의 refresh 대신 직접 반영
+      students.find((s) => s.id === studentId)!.paymentDay = day;
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '수납일 변경에 실패했습니다.');
+    } finally {
+      setPaymentDayLoading(null);
     }
   };
 
@@ -253,6 +297,23 @@ export default function StudentManagement() {
                 className={INPUT_CLASS}
               />
             </div>
+
+            {/* 수납일 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                수납일 (매월)
+              </label>
+              <select
+                value={formPaymentDay}
+                onChange={(e) => setFormPaymentDay(e.target.value ? Number(e.target.value) : '')}
+                className={INPUT_CLASS}
+              >
+                <option value="">미설정</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>{d}일</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button
@@ -294,6 +355,7 @@ export default function StudentManagement() {
                   <th className="px-4 py-3 font-medium text-gray-600">반</th>
                   <th className="px-4 py-3 font-medium text-gray-600">연락처</th>
                   <th className="px-4 py-3 font-medium text-gray-600">학부모 연락처</th>
+                  <th className="px-4 py-3 font-medium text-gray-600">수납</th>
                   <th className="px-4 py-3 font-medium text-gray-600">관리</th>
                 </tr>
               </thead>
@@ -336,6 +398,25 @@ export default function StudentManagement() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {student.parentPhone || '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        {paymentDayLoading === student.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                        ) : (
+                          <select
+                            value={student.paymentDay ?? ''}
+                            onChange={(e) => handlePaymentDayChange(student.id, e.target.value ? Number(e.target.value) : null)}
+                            className="w-16 rounded border border-gray-200 px-1 py-0.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+                          >
+                            <option value="">-</option>
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                              <option key={d} value={d}>{d}일</option>
+                            ))}
+                          </select>
+                        )}
+                        <TuitionBadge student={student} payment={paymentMap.get(student.id)} onPaymentChange={loadPayments} />
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -422,6 +503,25 @@ export default function StudentManagement() {
                       <span>{student.parentPhone}</span>
                     </div>
                   )}
+                  {/* 수납 */}
+                  <div className="flex items-center gap-2 pt-1 border-t border-gray-100 mt-1">
+                    <Wallet className="h-3.5 w-3.5 text-gray-400" />
+                    {paymentDayLoading === student.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                    ) : (
+                      <select
+                        value={student.paymentDay ?? ''}
+                        onChange={(e) => handlePaymentDayChange(student.id, e.target.value ? Number(e.target.value) : null)}
+                        className="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+                      >
+                        <option value="">수납일 미설정</option>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                          <option key={d} value={d}>매월 {d}일</option>
+                        ))}
+                      </select>
+                    )}
+                    <TuitionBadge student={student} payment={paymentMap.get(student.id)} onPaymentChange={loadPayments} />
+                  </div>
                 </div>
               </div>
             ))}

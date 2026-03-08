@@ -23,7 +23,19 @@ export interface Student {
   pin: string;
   classId: string;
   academyId: string;
+  paymentDay: number | null;
   createdAt: Date;
+}
+
+/** 월별 수납 기록 */
+export interface TuitionPayment {
+  id: string;
+  studentId: string;
+  academyId: string;
+  yearMonth: string;
+  amount: number;
+  method: '현금' | '카드' | '이체';
+  paidAt: Date;
 }
 
 /** 반 정보 */

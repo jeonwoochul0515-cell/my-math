@@ -12,6 +12,7 @@ function toStudent(row: Record<string, unknown>): Student {
     pin: row.pin as string,
     classId: (row.class_id as string) ?? '',
     academyId: row.academy_id as string,
+    paymentDay: (row.payment_day as number) ?? null,
     createdAt: new Date(row.created_at as string),
   };
 }
@@ -67,6 +68,7 @@ export async function createStudent(
       pin: student.pin,
       class_id: student.classId || null,
       academy_id: student.academyId,
+      payment_day: student.paymentDay,
     })
     .select()
     .single();
@@ -86,6 +88,19 @@ export async function updateStudentClass(
     .eq('id', studentId);
   if (error)
     throw new Error('반 변경에 실패했습니다: ' + error.message);
+}
+
+/** 학생 수납일 변경 */
+export async function updatePaymentDay(
+  studentId: string,
+  paymentDay: number | null
+): Promise<void> {
+  const { error } = await supabase
+    .from('students')
+    .update({ payment_day: paymentDay })
+    .eq('id', studentId);
+  if (error)
+    throw new Error('수납일 변경에 실패했습니다: ' + error.message);
 }
 
 /** 학생 삭제 */
