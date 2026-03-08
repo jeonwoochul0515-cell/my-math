@@ -11,10 +11,17 @@ import {
   calculateAttendanceStats,
   getStudentAttendanceRates,
 } from '../../services/attendance';
+import { getClasses } from '../../services/classes';
 import type { AttendanceStats, StudentAttendanceRate } from '../../services/attendance';
 import { AttendanceTableRow, AttendanceMobileCard } from './AttendanceRow';
 import Loading from '../common/Loading';
-import type { AttendanceRecord, Student } from '../../types';
+import type { AttendanceRecord, Student, Class } from '../../types';
+
+/** 날짜 문자열(YYYY-MM-DD)에서 한국어 요일 반환 */
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as const;
+function getDayName(dateStr: string): string {
+  return DAY_NAMES[new Date(dateStr + 'T00:00:00').getDay()];
+}
 
 /** 출결 상태 타입 */
 type AttendanceStatus = '출석' | '지각' | '결석' | '퇴실';
@@ -220,6 +227,7 @@ export default function AttendanceManagement() {
   const { academy, loading: academyLoading } = useAcademy(user?.uid ?? null);
   const { students, loading: studentsLoading } = useStudents(academy?.id ?? null);
 
+  const [classes, setClasses] = useState<Class[]>([]);
   const [selectedDate, setSelectedDate] = useState(getTodayString());
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -229,6 +237,19 @@ export default function AttendanceManagement() {
   const [attendanceRates, setAttendanceRates] = useState<StudentAttendanceRate[]>([]);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [showRatesPanel, setShowRatesPanel] = useState(false);
+
+  /** 반 목록 로드 */
+  const loadClasses = useCallback(async () => {
+    if (!academy?.id) return;
+    try {
+      const data = await getClasses(academy.id);
+      setClasses(data);
+    } catch {
+      /* 반 로드 실패는 조용히 처리 — 전체 학생 표시 */
+    }
+  }, [academy?.id]);
+
+  useEffect(() => { loadClasses(); }, [loadClasses]);
 
   /** 선택된 날짜의 출결 데이터 로드 */
   const loadAttendance = useCallback(async () => {
@@ -320,8 +341,30 @@ export default function AttendanceManagement() {
     attendance.map((r) => [r.studentId, r])
   );
 
+  /** 선택 날짜의 요일 */
+  const selectedDay = getDayName(selectedDate);
+
+  /** 해당 요일에 수업이 있는 반 ID Set */
+  const classMap = new Map(classes.map((c) => [c.id, c]));
+  const scheduledClassIds = new Set(
+    classes
+      .filter((c) => c.schedule.some((s) => s.day === selectedDay))
+      .map((c) => c.id)
+  );
+
+  /** 오늘 출결 대상 학생: 해당 요일에 수업이 있는 반 학생만 (시간표 없는 반은 모두 포함) */
+  const hasAnySchedule = classes.some((c) => c.schedule.length > 0);
+  const targetStudents = hasAnySchedule
+    ? students.filter((s: Student) => {
+        const cls = classMap.get(s.classId);
+        // 반 미지정 또는 시간표 미설정 반 → 항상 표시
+        if (!cls || cls.schedule.length === 0) return true;
+        return scheduledClassIds.has(s.classId);
+      })
+    : students;
+
   /** 학생별 출결 행 데이터 */
-  const rows = students.map((s: Student) => {
+  const rows = targetStudents.map((s: Student) => {
     const record = attendanceMap.get(s.id);
     return { student: s, record, status: getStatus(record) };
   });
@@ -329,8 +372,8 @@ export default function AttendanceManagement() {
   const isToday = selectedDate === getTodayString();
   const rowProps = { isToday, actionLoading, onCheckIn: handleCheckIn, onCheckOut: handleCheckOut };
 
-  /** 출결 통계 계산 */
-  const stats = calculateAttendanceStats(attendance, students.length);
+  /** 출결 통계 계산 (대상 학생 수 기준) */
+  const stats = calculateAttendanceStats(attendance, targetStudents.length);
 
   /** 이미 출석한 학생 ID 집합 */
   const existingStudentIds = new Set(attendance.map((r) => r.studentId));
@@ -371,6 +414,9 @@ export default function AttendanceManagement() {
             오늘
           </button>
         )}
+        <span className="text-sm text-gray-500">
+          {selectedDay}요일 · 대상 {targetStudents.length}명
+        </span>
       </div>
 
       {error && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}

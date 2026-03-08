@@ -9,7 +9,7 @@ export interface Academy {
   ownerPhone?: string;
   address?: string;
   textbookPublisher?: string;
-  logoUrl?: string;
+  logoUrl?: string | null;
   createdAt: Date;
 }
 

@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Loader2, X, BookOpen, Check } from 'lucide-react';
+import { Plus, Trash2, Loader2, X, BookOpen, Check, Clock } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAcademy } from '../../hooks/useAcademy';
 import { useStudents } from '../../hooks/useStudents';
-import { getClasses, createClass, deleteClass, updateCoveredTopics } from '../../services/classes';
+import { getClasses, createClass, deleteClass, updateCoveredTopics, updateClassSchedule } from '../../services/classes';
 import { getTopicList } from '../../data/curriculum2022';
 import Loading from '../common/Loading';
+import SchedulePicker from './SchedulePicker';
 import type { Class } from '../../types';
 
 /** 수업 일정 문자열 포맷 */
@@ -32,6 +33,11 @@ export default function ClassManagement() {
   const [formName, setFormName] = useState('');
   const [formGrade, setFormGrade] = useState('중1');
   const [formCapacity, setFormCapacity] = useState(10);
+  const [formSchedule, setFormSchedule] = useState<Class['schedule']>([]);
+  /** 시간표 편집 모달 상태 */
+  const [scheduleClassId, setScheduleClassId] = useState<string | null>(null);
+  const [editSchedule, setEditSchedule] = useState<Class['schedule']>([]);
+  const [scheduleSaving, setScheduleSaving] = useState(false);
   /** 진도 관리 상태 */
   const [progressClassId, setProgressClassId] = useState<string | null>(null);
   const [progressTopics, setProgressTopics] = useState<string[]>([]);
@@ -58,13 +64,14 @@ export default function ClassManagement() {
     setFormLoading(true);
     try {
       const newClass = await createClass({
-        name: formName.trim(), grade: formGrade, schedule: [],
-        capacity: formCapacity, academyId: academy.id,
+        name: formName.trim(), grade: formGrade, schedule: formSchedule,
+        capacity: formCapacity, academyId: academy.id, coveredTopics: [],
       });
       setClasses((prev) => [...prev, newClass]);
       setShowForm(false);
       setFormName('');
       setFormCapacity(10);
+      setFormSchedule([]);
     } catch (err) {
       alert(err instanceof Error ? err.message : '반 생성에 실패했습니다.');
     } finally { setFormLoading(false); }
@@ -119,6 +126,29 @@ export default function ClassManagement() {
     }
   };
 
+  /** 시간표 편집 패널 열기 */
+  const openScheduleEdit = (cls: Class) => {
+    setScheduleClassId(cls.id);
+    setEditSchedule([...cls.schedule]);
+  };
+
+  /** 시간표 저장 */
+  const saveSchedule = async () => {
+    if (!scheduleClassId) return;
+    setScheduleSaving(true);
+    try {
+      await updateClassSchedule(scheduleClassId, editSchedule);
+      setClasses((prev) =>
+        prev.map((c) => c.id === scheduleClassId ? { ...c, schedule: [...editSchedule] } : c)
+      );
+      setScheduleClassId(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '시간표 저장에 실패했습니다.');
+    } finally {
+      setScheduleSaving(false);
+    }
+  };
+
   if (academyLoading || studentsLoading) return <Loading role="owner" message="반 목록을 불러오는 중..." />;
   if (!academy) {
     return (
@@ -165,6 +195,7 @@ export default function ClassManagement() {
               <input type="number" min={1} max={50} value={formCapacity} onChange={(e) => setFormCapacity(Number(e.target.value))} className={INPUT_CLASS} />
             </div>
           </div>
+          <SchedulePicker value={formSchedule} onChange={setFormSchedule} />
           <button onClick={handleCreate} disabled={formLoading || !formName.trim()}
             className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
             {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} 추가하기
@@ -214,13 +245,22 @@ export default function ClassManagement() {
                     <div className="text-xs text-gray-500">
                       진도: <span className="font-medium text-gray-700">{cls.coveredTopics.length}개 단원 완료</span>
                     </div>
-                    <button
-                      onClick={() => openProgress(cls)}
-                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors"
-                    >
-                      <BookOpen className="h-3.5 w-3.5" />
-                      진도 관리
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openScheduleEdit(cls)}
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        시간표
+                      </button>
+                      <button
+                        onClick={() => openProgress(cls)}
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" />
+                        진도 관리
+                      </button>
+                    </div>
                   </div>
                   {cls.coveredTopics.length > 0 && (
                     <p className="mt-1 text-xs text-gray-400 truncate">
@@ -233,6 +273,35 @@ export default function ClassManagement() {
           })}
         </div>
       )}
+
+      {/* 시간표 편집 모달 */}
+      {scheduleClassId && (() => {
+        const cls = classes.find((c) => c.id === scheduleClassId);
+        if (!cls) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">{cls.name} 시간표</h3>
+                <button onClick={() => setScheduleClassId(null)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <SchedulePicker value={editSchedule} onChange={setEditSchedule} />
+              <div className="mt-4 flex justify-end gap-3">
+                <button onClick={() => setScheduleClassId(null)}
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+                  취소
+                </button>
+                <button onClick={saveSchedule} disabled={scheduleSaving}
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                  {scheduleSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : '저장'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 진도 관리 패널 (모달) */}
       {progressClassId && (() => {

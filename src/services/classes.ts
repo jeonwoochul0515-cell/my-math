@@ -66,6 +66,18 @@ export async function updateCoveredTopics(
   if (error) throw new Error('진도 업데이트에 실패했습니다: ' + error.message);
 }
 
+/** 반 시간표 업데이트 */
+export async function updateClassSchedule(
+  classId: string,
+  schedule: { day: string; startTime: string; endTime: string }[]
+): Promise<void> {
+  const { error } = await supabase
+    .from('classes')
+    .update({ schedule })
+    .eq('id', classId);
+  if (error) throw new Error('시간표 업데이트에 실패했습니다: ' + error.message);
+}
+
 /** 학생의 소속 반 조회 */
 export async function getClassById(classId: string): Promise<Class | null> {
   const { data, error } = await supabase
